@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  All test-harness zones. Connected into the sectors in sectors.xml. Names keep
+  their original "C##" scenario tags where those older scenario zones already
+  existed.
+-->
+<macros xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+  <!-- s01 ARG vs TER Military -->
+  <macro name="zone_vas_th_s01_home_macro"        class="zone"><component ref="standardzone"/><connections></connections></macro>
+  <macro name="zone_vas_th_s01_argonforce_macro"  class="zone"><component ref="standardzone"/><connections></connections></macro>
+  <macro name="zone_vas_th_s01_terranforce_macro" class="zone"><component ref="standardzone"/><connections></connections></macro>
+
+  <!-- s02 ARG vs TER Defence Stations -->
+  <macro name="zone_vas_th_s02_argonforce_macro"     class="zone"><component ref="standardzone"/><connections></connections></macro>
+  <macro name="zone_vas_th_s02_terranstation_macro" class="zone"><component ref="standardzone"/><connections></connections></macro>
+
+  <!-- s03 ARG vs TER Civil Ships -->
+  <macro name="zone_vas_th_s03_argonforce_macro"  class="zone"><component ref="standardzone"/><connections></connections></macro>
+  <macro name="zone_vas_th_s03_terrancivil_macro" class="zone"><component ref="standardzone"/><connections></connections></macro>
+
+  <!-- s04 ARG vs TER Civil Stations -->
+  <macro name="zone_vas_th_s04_argonforce_macro"    class="zone"><component ref="standardzone"/><connections></connections></macro>
+  <macro name="zone_vas_th_s04_terranstation_macro" class="zone"><component ref="standardzone"/><connections></connections></macro>
+
+  <!-- s05 Player vs PAR Defence Stations -->
+  <macro name="zone_vas_th_s05_playerforce_macro"     class="zone"><component ref="standardzone"/><connections></connections></macro>
+  <macro name="zone_vas_th_s05_paranidstation_macro"  class="zone"><component ref="standardzone"/><connections></connections></macro>
+
+  <!-- s06 Player vs PAR Civil Stations -->
+  <macro name="zone_vas_th_s06_playerforce_macro"    class="zone"><component ref="standardzone"/><connections></connections></macro>
+  <macro name="zone_vas_th_s06_paranidstation_macro" class="zone"><component ref="standardzone"/><connections></connections></macro>
+
+  <!-- s07 Player vs PAR Military -->
+  <macro name="zone_vas_th_s07_playerforce_macro" class="zone"><component ref="standardzone"/><connections></connections></macro>
+  <macro name="zone_vas_th_s07_paranidmil_macro"  class="zone"><component ref="standardzone"/><connections></connections></macro>
+
+  <!-- s08 Player vs PAR Civil Ships -->
+  <macro name="zone_vas_th_s08_playerforce_macro"  class="zone"><component ref="standardzone"/><connections></connections></macro>
+  <macro name="zone_vas_th_s08_paranidcivil_macro" class="zone"><component ref="standardzone"/><connections></connections></macro>
+
+  <!-- s09 Highway Pursuit -->
+  <macro name="zone_vas_th_pursuit_highway_macro" class="zone">
+    <component ref="standardzone"/>
+    <connections>
+      <connection ref="vas_th_pursuit_highway_entry_gate">
+        <offset><position x="10000" y="0" z="0"/></offset>
+      </connection>
+    </connections>
+  </macro>
+  <macro name="zone_vas_th_pursuit_highway_exit_macro" class="zone">
+    <component ref="standardzone"/>
+    <connections>
+      <connection ref="vas_th_pursuit_highway_exit_gate">
+        <offset><position x="0" y="0" z="0"/></offset>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s10/s11 Gate Pursuit -->
+  <macro name="zone_vas_th_pursuit_gate_origin_macro" class="zone">
+    <component ref="standardzone"/>
+    <connections>
+      <connection name="connection_vas_th_pursuit_gate_origin_to_dest" ref="gates">
+        <offset>
+          <position x="0" y="0" z="0"/>
+          <quaternion qx="0" qy="0" qz="0" qw="1"/>
+        </offset>
+        <macro ref="props_gates_anc_gate_macro" connection="space"/>
+      </connection>
+    </connections>
+  </macro>
+  <macro name="zone_vas_th_pursuit_gate_dest_macro" class="zone">
+    <component ref="standardzone"/>
+    <connections>
+      <connection name="connection_vas_th_pursuit_gate_dest_to_origin" ref="gates">
+        <offset>
+          <position x="0" y="0" z="0"/>
+          <quaternion qx="0" qy="1" qz="0" qw="0"/>
+        </offset>
+        <macro ref="props_gates_anc_gate_macro" connection="space"/>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s12 Distance Pursuit -->
+  <macro name="zone_vas_th_pursuit_distance_macro" class="zone"><component ref="standardzone"/><connections></connections></macro>
+
+  <!-- s13 Player/Paranid Highway Pursuit -->
+  <macro name="zone_vas_th_pursuit_player_highway_macro" class="zone">
+    <component ref="standardzone"/>
+    <connections>
+      <connection ref="vas_th_pursuit_player_highway_entry_gate">
+        <offset><position x="10000" y="0" z="0"/></offset>
+      </connection>
+    </connections>
+  </macro>
+  <macro name="zone_vas_th_pursuit_player_highway_exit_macro" class="zone">
+    <component ref="standardzone"/>
+    <connections>
+      <connection ref="vas_th_pursuit_player_highway_exit_gate">
+        <offset><position x="0" y="0" z="0"/></offset>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s14/s15 Player/Paranid Gate Pursuit -->
+  <macro name="zone_vas_th_pursuit_player_gate_origin_macro" class="zone">
+    <component ref="standardzone"/>
+    <connections>
+      <connection name="connection_vas_th_pursuit_player_gate_origin_to_dest" ref="gates">
+        <offset>
+          <position x="0" y="0" z="0"/>
+          <quaternion qx="0" qy="0" qz="0" qw="1"/>
+        </offset>
+        <macro ref="props_gates_anc_gate_macro" connection="space"/>
+      </connection>
+    </connections>
+  </macro>
+  <macro name="zone_vas_th_pursuit_player_gate_dest_macro" class="zone">
+    <component ref="standardzone"/>
+    <connections>
+      <connection name="connection_vas_th_pursuit_player_gate_dest_to_origin" ref="gates">
+        <offset>
+          <position x="0" y="0" z="0"/>
+          <quaternion qx="0" qy="1" qz="0" qw="0"/>
+        </offset>
+        <macro ref="props_gates_anc_gate_macro" connection="space"/>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s16 Player/Paranid Distance Pursuit -->
+  <macro name="zone_vas_th_pursuit_player_distance_macro" class="zone"><component ref="standardzone"/><connections></connections></macro>
+
+  <!-- s17 Direct Attack TER/ARG Size Pursuit -->
+  <macro name="zone_vas_th_pursuit_direct_ter_arg_macro" class="zone"><component ref="standardzone"/><connections></connections></macro>
+
+  <!-- s18 Direct Attack Player/PAR Size Pursuit -->
+  <macro name="zone_vas_th_pursuit_direct_player_par_macro" class="zone"><component ref="standardzone"/><connections></connections></macro>
+
+  <!-- s19 Active Fight Pursuit -->
+  <macro name="zone_vas_th_pursuit_active_fight_macro" class="zone"><component ref="standardzone"/><connections></connections></macro>
+
+  <!-- s20 Targeting: friendly bystander after primary kill -->
+  <macro name="zone_vas_th_targeting_friendly_macro" class="zone"><component ref="standardzone"/><connections></connections></macro>
+
+  <!-- s21 Targeting: VFF secondary acquisition -->
+  <macro name="zone_vas_th_targeting_vff_arg_macro" class="zone"><component ref="standardzone"/><connections></connections></macro>
+  <macro name="zone_vas_th_targeting_vff_ter_macro" class="zone"><component ref="standardzone"/><connections></connections></macro>
+
+  <!-- s22 Targeting: civilian targets closer than military target -->
+  <macro name="zone_vas_th_targeting_civilian_scan_macro" class="zone"><component ref="standardzone"/><connections></connections></macro>
+
+  <!-- s23/s24 MoveGeneric Gate Pursuit -->
+  <macro name="zone_vas_th_pursuit_movegeneric_gate_origin_macro" class="zone">
+    <component ref="standardzone"/>
+    <connections>
+      <connection name="connection_vas_th_pursuit_movegeneric_gate_origin_to_dest" ref="gates">
+        <offset>
+          <position x="0" y="0" z="0"/>
+          <quaternion qx="0" qy="0" qz="0" qw="1"/>
+        </offset>
+        <macro ref="props_gates_anc_gate_macro" connection="space"/>
+      </connection>
+    </connections>
+  </macro>
+  <macro name="zone_vas_th_pursuit_movegeneric_gate_dest_macro" class="zone">
+    <component ref="standardzone"/>
+    <connections>
+      <connection name="connection_vas_th_pursuit_movegeneric_gate_dest_to_origin" ref="gates">
+        <offset>
+          <position x="0" y="0" z="0"/>
+          <quaternion qx="0" qy="1" qz="0" qw="0"/>
+        </offset>
+        <macro ref="props_gates_anc_gate_macro" connection="space"/>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s25 Station Route Waypointing -->
+  <macro name="zone_vas_th_station_waypoint_macro" class="zone"><component ref="standardzone"/><connections></connections></macro>
+
+  <!-- s26/s27 Targeting: visible subordinate whose commander is not visible -->
+  <macro name="zone_vas_th_hidden_vff_scan_macro" class="zone">
+    <component ref="standardzone"/>
+    <connections>
+      <connection name="connection_vas_th_hidden_vff_scan_to_commander" ref="gates">
+        <offset>
+          <position x="0" y="0" z="0"/>
+          <quaternion qx="0" qy="0" qz="0" qw="1"/>
+        </offset>
+        <macro ref="props_gates_anc_gate_macro" connection="space"/>
+      </connection>
+    </connections>
+  </macro>
+  <macro name="zone_vas_th_hidden_vff_commander_macro" class="zone">
+    <component ref="standardzone"/>
+    <connections>
+      <connection name="connection_vas_th_hidden_vff_commander_to_scan" ref="gates">
+        <offset>
+          <position x="0" y="0" z="0"/>
+          <quaternion qx="0" qy="1" qz="0" qw="0"/>
+        </offset>
+        <macro ref="props_gates_anc_gate_macro" connection="space"/>
+      </connection>
+    </connections>
+  </macro>
+
+</macros>

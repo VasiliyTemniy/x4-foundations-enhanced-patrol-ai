@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<content
+  id="vas_epai_test_harness"
+  name="[VAS] Enhanced Patrol AI - Test Harness"
+  description="Technical test harness for Enhanced Patrol AI. Custom gamestart 'EPAI Test Harness' loads an empty purpose-built universe (no vanilla ships/jobs/stations/economy), spawns deterministic opposing task forces, sets faction relations (war/friendly), creates operational stations, and places private long-range test satellites for shared vision."
+  author="VasiliyTemniy"
+  version="200"
+  date="2026-06-24"
+  save="0"
+  enabled="1">
+  <dependency version="900"/>
+  <dependency id="vas_enhanced_patrol_ai" optional="true"/>
+  <text language="44" name="[VAS] Enhanced Patrol AI - Test Harness" description="Technical test harness for Enhanced Patrol AI" author="VasiliyTemniy"/>
+</content>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Enhanced Patrol AI - Test Harness gamestart.
+
+  <location galaxy="vas_th_galaxy_macro"> makes the new game load ONLY the custom
+  test universe; the vanilla galaxy, its jobs, stations, economy and traffic never exist.
+  The player starts in the technical test universe next to a player-owned shipyard
+  (created operational in md/vas_epai_test_harness.xml). research_teleportation is granted
+  so the player can teleport between the disconnected test sectors to observe each battle.
+-->
+<diff xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <add sel="/gamestarts">
+    <gamestart id="vas_epai_th_gamestart" name="{2026062302,1}" description="{2026062302,2}" image="gamestart_2" group="2">
+      <!-- Player starts in the same sector where highway is placed to make sure it's rendered properly -->
+      <location galaxy="vas_th_galaxy_macro" zone="zone_vas_th_pursuit_highway_macro">
+        <rotation yaw="0" pitch="0" roll="0"/>
+      </location>
+      <player macro="character_player_tutorial_macro" money="9000000000" name="EPAI Observer">
+        <ship macro="ship_gen_s_fighter_01_a_macro">
+          <loadout>
+            <macros>
+              <engine macro="engine_par_s_combat_01_mk3_macro" path="../con_engine_03"/>
+              <engine macro="engine_par_s_combat_01_mk3_macro" path="../con_engine_02"/>
+              <engine macro="engine_par_s_combat_01_mk3_macro" path="../con_engine_01"/>
+              <shield macro="shield_par_s_standard_01_mk3_macro" path="../con_shield_01"/>
+              <weapon macro="weapon_gen_s_guided_01_mk2_macro" path="../con_weapon_01"/>
+            </macros>
+            <software>
+              <software ware="software_dockmk2"/>
+              <software ware="software_flightassistmk1"/>
+              <software ware="software_scannerlongrangemk2"/>
+              <software ware="software_scannerobjectmk2"/>
+              <software ware="software_targetmk1"/>
+              <software ware="software_trademk1"/>
+            </software>
+            <virtualmacros>
+              <thruster macro="thruster_gen_s_allround_01_mk3_macro"/>
+            </virtualmacros>
+            <crew>
+              <crew role="service"/>
+            </crew>
+          </loadout>
+        </ship>
+        <inventory>
+          <ware ware="inv_timewarp" amount="1"/>
+          <ware ware="engine_gen_spacesuit_01_mk2" amount="1"/>
+          <ware ware="software_scannerobjectmk3" amount="1"/>
+        </inventory>
+        <research>
+          <ware ware="research_radioreceiver"/>
+          <ware ware="research_sensorbooster"/>
+          <ware ware="research_tradeinterface"/>
+          <ware ware="research_teleportation"/>
+        </research>
+      </player>
+      <universe ventures="false" visitors="false"/>
+    </gamestart>
+  </add>
+</diff>

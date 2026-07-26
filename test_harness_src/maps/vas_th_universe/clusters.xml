@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  25 clusters, one sector each. Every cluster reuses the vanilla Cluster_35 space
+  backdrop (visual/lighting only) so we do not have to author environment art.
+-->
+<macros xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+  <macro name="vas_th_cluster01_macro" class="cluster">
+    <component ref="standardcluster"/>
+    <connections>
+      <connection name="vas_th_cluster01_sector_connection" ref="sectors">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="vas_th_sector01_macro" connection="cluster"/>
+      </connection>
+      <connection ref="content"><macro><component connection="space" ref="Cluster_35"/></macro></connection>
+    </connections>
+  </macro>
+
+  <macro name="vas_th_cluster02_macro" class="cluster">
+    <component ref="standardcluster"/>
+    <connections>
+      <connection name="vas_th_cluster02_sector_connection" ref="sectors">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="vas_th_sector02_macro" connection="cluster"/>
+      </connection>
+      <connection ref="content"><macro><component connection="space" ref="Cluster_35"/></macro></connection>
+    </connections>
+  </macro>
+
+  <macro name="vas_th_cluster03_macro" class="cluster">
+    <component ref="standardcluster"/>
+    <connections>
+      <connection name="vas_th_cluster03_sector_connection" ref="sectors">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="vas_th_sector03_macro" connection="cluster"/>
+      </connection>
+      <connection ref="content"><macro><component connection="space" ref="Cluster_35"/></macro></connection>
+    </connections>
+  </macro>
+
+  <macro name="vas_th_cluster04_macro" class="cluster">
+    <component ref="standardcluster"/>
+    <connections>
+      <connection name="vas_th_cluster04_sector_connection" ref="sectors">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="vas_th_sector04_macro" connection="cluster"/>
+      </connection>
+      <connection ref="content"><macro><component connection="space" ref="Cluster_35"/></macro></connection>
+    </connections>
+  </macro>
+
+  <macro name="vas_th_cluster05_macro" class="cluster">
+    <component ref="standardcluster"/>
+    <connections>
+      <connection name="vas_th_cluster05_sector_connection" ref="sectors">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="vas_th_sector05_macro" connection="cluster"/>
+      </connection>
+      <connection ref="content"><macro><component connection="space" ref="Cluster_35"/></macro></connection>
+    </connections>
+  </macro>
+
+  <macro name="vas_th_cluster06_macro" class="cluster">
+    <component ref="standardcluster"/>
+    <connections>
+      <connection name="vas_th_cluster06_sector_connection" ref="sectors">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="vas_th_sector06_macro" connection="cluster"/>
+      </connection>
+      <connection ref="content"><macro><component connection="space" ref="Cluster_35"/></macro></connection>
+    </connections>
+  </macro>
+
+  <macro name="vas_th_cluster07_macro" class="cluster">
+    <component ref="standardcluster"/>
+    <connections>
+      <connection name="vas_th_cluster07_sector_connection" ref="sectors">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="vas_th_sector07_macro" connection="cluster"/>
+      </connection>
+      <connection ref="content"><macro><component connection="space" ref="Cluster_35"/></macro></connection>
+    </connections>
+  </macro>
+
+  <macro name="vas_th_cluster08_macro" class="cluster">
+    <component ref="standardcluster"/>
+    <connections>
+      <connection name="vas_th_cluster08_sector_connection" ref="sectors">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="vas_th_sector08_macro" connection="cluster"/>
+      </connection>
+      <connection ref="content"><macro><component connection="space" ref="Cluster_35"/></macro></connection>
+    </connections>
+  </macro>
+
+  <macro name="vas_th_cluster09_macro" class="cluster">
+    <component ref="standardcluster"/>
+    <connections>
+      <connection name="vas_th_cluster09_sector_connection" ref="sectors">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="vas_th_sector09_macro" connection="cluster"/>
+      </connection>
+      <connection ref="content"><macro><component connection="space" ref="Cluster_35"/></macro></connection>
+    </connections>
+  </macro>
+
+  <macro name="vas_th_cluster10_macro" class="cluster">
+    <component ref="standardcluster"/>
+    <connections>
+      <connection name="vas_th_cluster10_sector_connection" ref="sectors">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="vas_th_sector10_macro" connection="cluster"/>
+      </connection>
+      <connection ref="content"><macro><component connection="space" ref="Cluster_35"/></macro></connection>
+    </connections>
+  </macro>
+
+  <macro name="vas_th_cluster11_macro" class="cluster">
+    <component ref="standardcluster"/>
+    <connections>
+      <connection name="vas_th_cluster11_sector_connection" ref="sectors">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="vas_th_sector11_macro" connection="cluster"/>
+      </connection>
+      <connection ref="content"><macro><component connection="space" ref="Cluster_35"/></macro></connection>
+    </connections>
+  </macro>
+
+  <macro name="vas_th_cluster12_macro" class="cluster">
+    <component ref="standardcluster"/>
+    <connections>
+      <connection name="vas_th_cluster12_sector_connection" ref="sectors">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="vas_th_sector12_macro" connection="cluster"/>
+      </connection>
+      <connection ref="content"><macro><component connection="space" ref="Cluster_35"/></macro></connection>
+    </connections>
+  </macro>
+
+  <macro name="vas_th_cluster13_macro" class="cluster">
+    <component ref="standardcluster"/>
+    <connections>
+      <connection name="vas_th_cluster13_sector_connection" ref="sectors">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="vas_th_sector13_macro" connection="cluster"/>
+      </connection>
+      <connection ref="content"><macro><component connection="space" ref="Cluster_35"/></macro></connection>
+    </connections>
+  </macro>
+
+  <macro name="vas_th_cluster14_macro" class="cluster">
+    <component ref="standardcluster"/>
+    <connections>
+      <connection name="vas_th_cluster14_sector_connection" ref="sectors">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="vas_th_sector14_macro" connection="cluster"/>
+      </connection>
+      <connection ref="content"><macro><component connection="space" ref="Cluster_35"/></macro></connection>
+    </connections>
+  </macro>
+
+  <macro name="vas_th_cluster15_macro" class="cluster">
+    <component ref="standardcluster"/>
+    <connections>
+      <connection name="vas_th_cluster15_sector_connection" ref="sectors">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="vas_th_sector15_macro" connection="cluster"/>
+      </connection>
+      <connection ref="content"><macro><component connection="space" ref="Cluster_35"/></macro></connection>
+    </connections>
+  </macro>
+
+  <macro name="vas_th_cluster16_macro" class="cluster">
+    <component ref="standardcluster"/>
+    <connections>
+      <connection name="vas_th_cluster16_sector_connection" ref="sectors">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="vas_th_sector16_macro" connection="cluster"/>
+      </connection>
+      <connection ref="content"><macro><component connection="space" ref="Cluster_35"/></macro></connection>
+    </connections>
+  </macro>
+
+  <macro name="vas_th_cluster17_macro" class="cluster">
+    <component ref="standardcluster"/>
+    <connections>
+      <connection name="vas_th_cluster17_sector_connection" ref="sectors">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="vas_th_sector17_macro" connection="cluster"/>
+      </connection>
+      <connection ref="content"><macro><component connection="space" ref="Cluster_35"/></macro></connection>
+    </connections>
+  </macro>
+
+  <macro name="vas_th_cluster18_macro" class="cluster">
+    <component ref="standardcluster"/>
+    <connections>
+      <connection name="vas_th_cluster18_sector_connection" ref="sectors">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="vas_th_sector18_macro" connection="cluster"/>
+      </connection>
+      <connection ref="content"><macro><component connection="space" ref="Cluster_35"/></macro></connection>
+    </connections>
+  </macro>
+
+  <macro name="vas_th_cluster19_macro" class="cluster">
+    <component ref="standardcluster"/>
+    <connections>
+      <connection name="vas_th_cluster19_sector_connection" ref="sectors">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="vas_th_sector19_macro" connection="cluster"/>
+      </connection>
+      <connection ref="content"><macro><component connection="space" ref="Cluster_35"/></macro></connection>
+    </connections>
+  </macro>
+
+  <macro name="vas_th_cluster20_macro" class="cluster">
+    <component ref="standardcluster"/>
+    <connections>
+      <connection name="vas_th_cluster20_sector_connection" ref="sectors">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="vas_th_sector20_macro" connection="cluster"/>
+      </connection>
+      <connection ref="content"><macro><component connection="space" ref="Cluster_35"/></macro></connection>
+    </connections>
+  </macro>
+
+  <macro name="vas_th_cluster21_macro" class="cluster">
+    <component ref="standardcluster"/>
+    <connections>
+      <connection name="vas_th_cluster21_sector_connection" ref="sectors">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="vas_th_sector21_macro" connection="cluster"/>
+      </connection>
+      <connection ref="content"><macro><component connection="space" ref="Cluster_35"/></macro></connection>
+    </connections>
+  </macro>
+
+  <macro name="vas_th_cluster22_macro" class="cluster">
+    <component ref="standardcluster"/>
+    <connections>
+      <connection name="vas_th_cluster22_sector_connection" ref="sectors">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="vas_th_sector22_macro" connection="cluster"/>
+      </connection>
+      <connection ref="content"><macro><component connection="space" ref="Cluster_35"/></macro></connection>
+    </connections>
+  </macro>
+
+  <macro name="vas_th_cluster23_macro" class="cluster">
+    <component ref="standardcluster"/>
+    <connections>
+      <connection name="vas_th_cluster23_sector_connection" ref="sectors">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="vas_th_sector23_macro" connection="cluster"/>
+      </connection>
+      <connection ref="content"><macro><component connection="space" ref="Cluster_35"/></macro></connection>
+    </connections>
+  </macro>
+
+  <macro name="vas_th_cluster24_macro" class="cluster">
+    <component ref="standardcluster"/>
+    <connections>
+      <connection name="vas_th_cluster24_sector_connection" ref="sectors">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="vas_th_sector24_macro" connection="cluster"/>
+      </connection>
+      <connection ref="content"><macro><component connection="space" ref="Cluster_35"/></macro></connection>
+    </connections>
+  </macro>
+
+  <macro name="vas_th_cluster25_macro" class="cluster">
+    <component ref="standardcluster"/>
+    <connections>
+      <connection name="vas_th_cluster25_sector_connection" ref="sectors">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="vas_th_sector25_macro" connection="cluster"/>
+      </connection>
+      <connection ref="content"><macro><component connection="space" ref="Cluster_35"/></macro></connection>
+    </connections>
+  </macro>
+
+  <macro name="vas_th_cluster26_macro" class="cluster">
+    <component ref="standardcluster"/>
+    <connections>
+      <connection name="vas_th_cluster26_sector_connection" ref="sectors">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="vas_th_sector26_macro" connection="cluster"/>
+      </connection>
+      <connection ref="content"><macro><component connection="space" ref="Cluster_35"/></macro></connection>
+    </connections>
+  </macro>
+
+  <macro name="vas_th_cluster27_macro" class="cluster">
+    <component ref="standardcluster"/>
+    <connections>
+      <connection name="vas_th_cluster27_sector_connection" ref="sectors">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="vas_th_sector27_macro" connection="cluster"/>
+      </connection>
+      <connection ref="content"><macro><component connection="space" ref="Cluster_35"/></macro></connection>
+    </connections>
+  </macro>
+
+</macros>

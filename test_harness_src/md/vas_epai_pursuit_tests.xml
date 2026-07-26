@@ -1,0 +1,735 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mdscript name="VAS_EPAI_PursuitTests" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="md.xsd">
+  <!--
+    Controlled one-off pursuit scenarios for EPAI.
+
+    These ships are created by MD rather than jobs because each scenario needs exact
+    placement and exact initial orders: highway pursuit, gate pursuit, long-range
+    pursuedistance behaviour, and active-fight pursuit bounds.
+  -->
+  <cues>
+    <cue name="SetupPursuitTests">
+      <conditions>
+        <event_cue_signalled cue="md.Setup.GameStart"/>
+        <check_value value="player.galaxy.macro == macro.vas_th_galaxy_macro"/>
+      </conditions>
+      <actions>
+        <find_zone name="$HighwayZone" macro="macro.zone_vas_th_pursuit_highway_macro"/>
+        <find_zone name="$GateOriginZone" macro="macro.zone_vas_th_pursuit_gate_origin_macro"/>
+        <find_zone name="$GateDestZone" macro="macro.zone_vas_th_pursuit_gate_dest_macro"/>
+        <find_zone name="$MoveGenericGateOriginZone" macro="macro.zone_vas_th_pursuit_movegeneric_gate_origin_macro"/>
+        <find_zone name="$MoveGenericGateDestZone" macro="macro.zone_vas_th_pursuit_movegeneric_gate_dest_macro"/>
+        <find_zone name="$DistanceZone" macro="macro.zone_vas_th_pursuit_distance_macro"/>
+        <find_zone name="$PlayerHighwayZone" macro="macro.zone_vas_th_pursuit_player_highway_macro"/>
+        <find_zone name="$PlayerGateOriginZone" macro="macro.zone_vas_th_pursuit_player_gate_origin_macro"/>
+        <find_zone name="$PlayerGateDestZone" macro="macro.zone_vas_th_pursuit_player_gate_dest_macro"/>
+        <find_zone name="$PlayerDistanceZone" macro="macro.zone_vas_th_pursuit_player_distance_macro"/>
+        <find_zone name="$DirectTerArgZone" macro="macro.zone_vas_th_pursuit_direct_ter_arg_macro"/>
+        <find_zone name="$DirectPlayerParZone" macro="macro.zone_vas_th_pursuit_direct_player_par_macro"/>
+        <find_zone name="$ActiveFightZone" macro="macro.zone_vas_th_pursuit_active_fight_macro"/>
+
+        <!-- Keep visibility deterministic; this test is about pursuit continuation, not first detection. -->
+        <do_for_each name="$SatZone" in="[$HighwayZone, $GateOriginZone, $GateDestZone, $MoveGenericGateOriginZone, $MoveGenericGateDestZone]">
+          <do_if value="$SatZone">
+            <create_object name="$ArgSat" macro="macro.vas_th_satellite_800km_macro" zone="$SatZone" owner="faction.argon">
+              <position x="10km" y="0" z="90km"/>
+            </create_object>
+            <create_object name="$TerSat" macro="macro.vas_th_satellite_800km_macro" zone="$SatZone" owner="faction.terran">
+              <position x="-10km" y="0" z="90km"/>
+            </create_object>
+            <create_object name="$PlayerSat" macro="macro.vas_th_satellite_800km_macro" zone="$SatZone" owner="faction.player">
+              <position x="0" y="0" z="100km"/>
+            </create_object>
+          </do_if>
+        </do_for_each>
+
+        <do_for_each name="$SatZone" in="[$PlayerHighwayZone, $PlayerGateOriginZone, $PlayerGateDestZone]">
+          <do_if value="$SatZone">
+            <create_object name="$ParSat" macro="macro.vas_th_satellite_800km_macro" zone="$SatZone" owner="faction.paranid">
+              <position x="10km" y="0" z="90km"/>
+            </create_object>
+            <create_object name="$PlayerSat" macro="macro.vas_th_satellite_800km_macro" zone="$SatZone" owner="faction.player">
+              <position x="0" y="0" z="100km"/>
+            </create_object>
+          </do_if>
+        </do_for_each>
+
+        <do_if value="$DirectTerArgZone">
+          <create_object name="$DirectTerArgBackwardArgSat" macro="macro.vas_th_satellite_800km_macro" zone="$DirectTerArgZone" owner="faction.argon">
+            <position x="-150km" y="0" z="10km"/>
+          </create_object>
+          <create_object name="$DirectTerArgBackwardTerSat" macro="macro.vas_th_satellite_800km_macro" zone="$DirectTerArgZone" owner="faction.terran">
+            <position x="-150km" y="0" z="-10km"/>
+          </create_object>
+          <create_object name="$DirectTerArgBackwardPlayerSat" macro="macro.vas_th_satellite_800km_macro" zone="$DirectTerArgZone" owner="faction.player">
+            <position x="-150km" y="0" z="0"/>
+          </create_object>
+          <create_object name="$DirectTerArgMidArgSat" macro="macro.vas_th_satellite_800km_macro" zone="$DirectTerArgZone" owner="faction.argon">
+            <position x="350km" y="0" z="10km"/>
+          </create_object>
+          <create_object name="$DirectTerArgMidTerSat" macro="macro.vas_th_satellite_800km_macro" zone="$DirectTerArgZone" owner="faction.terran">
+            <position x="350km" y="0" z="-10km"/>
+          </create_object>
+          <create_object name="$DirectTerArgMidPlayerSat" macro="macro.vas_th_satellite_800km_macro" zone="$DirectTerArgZone" owner="faction.player">
+            <position x="350km" y="0" z="0"/>
+          </create_object>
+          <create_object name="$DirectTerArgForwardArgSat" macro="macro.vas_th_satellite_800km_macro" zone="$DirectTerArgZone" owner="faction.argon">
+            <position x="850km" y="0" z="10km"/>
+          </create_object>
+          <create_object name="$DirectTerArgForwardTerSat" macro="macro.vas_th_satellite_800km_macro" zone="$DirectTerArgZone" owner="faction.terran">
+            <position x="850km" y="0" z="-10km"/>
+          </create_object>
+          <create_object name="$DirectTerArgForwardPlayerSat" macro="macro.vas_th_satellite_800km_macro" zone="$DirectTerArgZone" owner="faction.player">
+            <position x="850km" y="0" z="0"/>
+          </create_object>
+        </do_if>
+
+        <do_if value="$DirectPlayerParZone">
+          <create_object name="$DirectPlayerParBackwardParSat" macro="macro.vas_th_satellite_800km_macro" zone="$DirectPlayerParZone" owner="faction.paranid">
+            <position x="-150km" y="0" z="10km"/>
+          </create_object>
+          <create_object name="$DirectPlayerParBackwardPlayerSat" macro="macro.vas_th_satellite_800km_macro" zone="$DirectPlayerParZone" owner="faction.player">
+            <position x="-150km" y="0" z="0"/>
+          </create_object>
+          <create_object name="$DirectPlayerParMidParSat" macro="macro.vas_th_satellite_800km_macro" zone="$DirectPlayerParZone" owner="faction.paranid">
+            <position x="350km" y="0" z="10km"/>
+          </create_object>
+          <create_object name="$DirectPlayerParMidPlayerSat" macro="macro.vas_th_satellite_800km_macro" zone="$DirectPlayerParZone" owner="faction.player">
+            <position x="350km" y="0" z="0"/>
+          </create_object>
+          <create_object name="$DirectPlayerParForwardParSat" macro="macro.vas_th_satellite_800km_macro" zone="$DirectPlayerParZone" owner="faction.paranid">
+            <position x="850km" y="0" z="10km"/>
+          </create_object>
+          <create_object name="$DirectPlayerParForwardPlayerSat" macro="macro.vas_th_satellite_800km_macro" zone="$DirectPlayerParZone" owner="faction.player">
+            <position x="850km" y="0" z="0"/>
+          </create_object>
+        </do_if>
+
+        <do_if value="$ActiveFightZone">
+          <create_object name="$ActiveFightArgSat" macro="macro.vas_th_satellite_800km_macro" zone="$ActiveFightZone" owner="faction.argon">
+            <position x="0" y="0" z="10km"/>
+          </create_object>
+          <create_object name="$ActiveFightTerSat" macro="macro.vas_th_satellite_800km_macro" zone="$ActiveFightZone" owner="faction.terran">
+            <position x="0" y="0" z="-10km"/>
+          </create_object>
+          <create_object name="$ActiveFightPlayerSat" macro="macro.vas_th_satellite_800km_macro" zone="$ActiveFightZone" owner="faction.player">
+            <position x="0" y="0" z="0"/>
+          </create_object>
+        </do_if>
+
+        <!-- s09: straight 300 km highway starts at x=10km and runs right along +X. -->
+        <do_if value="$HighwayZone">
+          <create_position name="$HighwayMoveTarget" object="$HighwayZone" space="$HighwayZone" x="310km" y="0" z="1km"/>
+          <create_ship name="$HighwayArg" macro="macro.ship_arg_m_frigate_01_a_macro" zone="$HighwayZone" capturable="false">
+            <owner exact="faction.argon" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+            <position x="-20km" y="0" z="1km"/>
+          </create_ship>
+          <create_ship name="$HighwayTer" macro="macro.ship_ter_m_corvette_01_a_macro" zone="$HighwayZone" capturable="false">
+            <owner exact="faction.terran" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.terran" tags="tag.pilot"/></pilot>
+            <position x="-80km" y="0" z="1km"/>
+          </create_ship>
+          <create_order object="$HighwayArg" id="'MoveGeneric'" immediate="true">
+            <param name="destination" value="$HighwayZone.sector"/>
+            <param name="position" value="$HighwayMoveTarget"/>
+          </create_order>
+          <create_order object="$HighwayTer" id="'Attack'" immediate="true">
+            <param name="primarytarget" value="$HighwayArg"/>
+            <param name="allowothertargets" value="false"/>
+            <param name="pursuetargets" value="true"/>
+            <param name="pursuedistance" value="800km"/>
+            <param name="vas_epai_issued_by_epai" value="true"/>
+            <param name="vas_epai_skip_ship_mayattack" value="false"/>
+            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="checkrelation" value="false"/>
+            <param name="internalorder" value="true"/>
+          </create_order>
+        </do_if>
+
+        <!-- s10/s11: ARG moves toward the gate and into the empty paired sector; TER attacks from behind it. -->
+        <do_if value="$GateOriginZone and $GateDestZone">
+          <create_position name="$GateMoveTarget" object="$GateDestZone" space="$GateDestZone" x="90km" y="0" z="0"/>
+          <create_ship name="$GateArg" macro="macro.ship_arg_s_scout_01_a_macro" zone="$GateOriginZone" capturable="false">
+            <owner exact="faction.argon" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+            <position x="-30km" y="0" z="0"/>
+          </create_ship>
+          <create_ship name="$GateTer" macro="macro.ship_ter_s_fighter_01_a_macro" zone="$GateOriginZone" capturable="false">
+            <owner exact="faction.terran" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.terran" tags="tag.pilot"/></pilot>
+            <position x="-90km" y="0" z="0"/>
+          </create_ship>
+          <create_ship name="$GateTerM" macro="macro.ship_ter_m_corvette_01_a_macro" zone="$GateOriginZone" capturable="false">
+            <owner exact="faction.terran" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.terran" tags="tag.pilot"/></pilot>
+            <position x="-90km" y="0" z="-10km"/>
+          </create_ship>
+          <create_ship name="$GateTerL" macro="macro.ship_ter_l_destroyer_01_a_macro" zone="$GateOriginZone" capturable="false">
+            <owner exact="faction.terran" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.terran" tags="tag.pilot"/></pilot>
+            <position x="-100km" y="0" z="10km"/>
+          </create_ship>
+          <create_ship name="$GateTerXL" macro="macro.ship_ter_xl_carrier_01_a_macro" zone="$GateOriginZone" capturable="false">
+            <owner exact="faction.terran" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.terran" tags="tag.pilot"/></pilot>
+            <position x="-110km" y="0" z="-20km"/>
+          </create_ship>
+          <create_order object="$GateArg" id="'MoveGeneric'" immediate="true">
+            <param name="destination" value="$GateDestZone.sector"/>
+            <param name="position" value="$GateMoveTarget"/>
+          </create_order>
+          <create_order object="$GateTer" id="'Attack'" immediate="true">
+            <param name="primarytarget" value="$GateArg"/>
+            <param name="allowothertargets" value="false"/>
+            <param name="pursuetargets" value="true"/>
+            <param name="pursuedistance" value="800km"/>
+            <param name="vas_epai_issued_by_epai" value="true"/>
+            <param name="vas_epai_skip_ship_mayattack" value="false"/>
+            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="checkrelation" value="false"/>
+            <param name="internalorder" value="true"/>
+          </create_order>
+          <create_order object="$GateTerM" id="'Attack'" immediate="true">
+            <param name="primarytarget" value="$GateArg"/>
+            <param name="allowothertargets" value="false"/>
+            <param name="pursuetargets" value="true"/>
+            <param name="pursuedistance" value="800km"/>
+            <param name="vas_epai_issued_by_epai" value="true"/>
+            <param name="vas_epai_skip_ship_mayattack" value="false"/>
+            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="checkrelation" value="false"/>
+            <param name="internalorder" value="true"/>
+          </create_order>
+          <create_order object="$GateTerL" id="'Attack'" immediate="true">
+            <param name="primarytarget" value="$GateArg"/>
+            <param name="allowothertargets" value="false"/>
+            <param name="pursuetargets" value="true"/>
+            <param name="pursuedistance" value="800km"/>
+            <param name="vas_epai_issued_by_epai" value="true"/>
+            <param name="vas_epai_skip_ship_mayattack" value="false"/>
+            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="checkrelation" value="false"/>
+            <param name="internalorder" value="true"/>
+          </create_order>
+          <create_order object="$GateTerXL" id="'Attack'" immediate="true">
+            <param name="primarytarget" value="$GateArg"/>
+            <param name="allowothertargets" value="false"/>
+            <param name="pursuetargets" value="true"/>
+            <param name="pursuedistance" value="800km"/>
+            <param name="vas_epai_issued_by_epai" value="true"/>
+            <param name="vas_epai_skip_ship_mayattack" value="false"/>
+            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="checkrelation" value="false"/>
+            <param name="internalorder" value="true"/>
+          </create_order>
+        </do_if>
+
+        <!-- s23/s24: TER patrol must approach an initially unseen ARG scout without MoveGeneric pursuing through the gate. -->
+        <do_if value="$MoveGenericGateOriginZone and $MoveGenericGateDestZone">
+          <create_position name="$MoveGenericGateMoveTarget" object="$MoveGenericGateDestZone" space="$MoveGenericGateDestZone" x="90km" y="0" z="0"/>
+          <create_ship name="$MoveGenericGateArg" macro="macro.ship_arg_s_scout_01_a_macro" zone="$MoveGenericGateOriginZone" capturable="false">
+            <owner exact="faction.argon" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+            <position x="-100km" y="0" z="0"/>
+          </create_ship>
+          <create_ship name="$MoveGenericGateTer" macro="macro.ship_ter_m_corvette_01_a_macro" zone="$MoveGenericGateOriginZone" capturable="false">
+            <owner exact="faction.terran" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.terran" tags="tag.pilot"/></pilot>
+            <position x="-300km" y="0" z="0"/>
+          </create_ship>
+          <create_order object="$MoveGenericGateArg" id="'MoveGeneric'" immediate="true">
+            <param name="destination" value="$MoveGenericGateDestZone.sector"/>
+            <param name="position" value="$MoveGenericGateMoveTarget"/>
+          </create_order>
+          <create_order object="$MoveGenericGateTer" id="'Patrol'" default="true">
+            <param name="range" value="class.zone"/>
+          </create_order>
+        </do_if>
+
+        <!-- s12: ARG starts 700 km away and keeps moving outward from the TER attackers. -->
+        <do_if value="$DistanceZone">
+          <create_position name="$DistanceMoveTarget" object="$DistanceZone" space="$DistanceZone" x="2000km" y="0" z="0"/>
+
+          <!-- Distance test needs two vision anchors: between the ships and ahead of the fleeing ARG ship. -->
+          <create_object name="$DistanceBackwardArgSat" macro="macro.vas_th_satellite_800km_macro" zone="$DistanceZone" owner="faction.argon">
+            <position x="-150km" y="0" z="10km"/>
+          </create_object>
+          <create_object name="$DistanceBackwardTerSat" macro="macro.vas_th_satellite_800km_macro" zone="$DistanceZone" owner="faction.terran">
+            <position x="-150km" y="0" z="-10km"/>
+          </create_object>
+          <create_object name="$DistanceBackwardPlayerSat" macro="macro.vas_th_satellite_800km_macro" zone="$DistanceZone" owner="faction.player">
+            <position x="-150km" y="0" z="0"/>
+          </create_object>
+          <create_object name="$DistanceMidArgSat" macro="macro.vas_th_satellite_800km_macro" zone="$DistanceZone" owner="faction.argon">
+            <position x="350km" y="0" z="10km"/>
+          </create_object>
+          <create_object name="$DistanceMidTerSat" macro="macro.vas_th_satellite_800km_macro" zone="$DistanceZone" owner="faction.terran">
+            <position x="350km" y="0" z="-10km"/>
+          </create_object>
+          <create_object name="$DistanceMidPlayerSat" macro="macro.vas_th_satellite_800km_macro" zone="$DistanceZone" owner="faction.player">
+            <position x="350km" y="0" z="0"/>
+          </create_object>
+          <create_object name="$DistanceForwardArgSat" macro="macro.vas_th_satellite_800km_macro" zone="$DistanceZone" owner="faction.argon">
+            <position x="850km" y="0" z="10km"/>
+          </create_object>
+          <create_object name="$DistanceForwardTerSat" macro="macro.vas_th_satellite_800km_macro" zone="$DistanceZone" owner="faction.terran">
+            <position x="850km" y="0" z="-10km"/>
+          </create_object>
+          <create_object name="$DistanceForwardPlayerSat" macro="macro.vas_th_satellite_800km_macro" zone="$DistanceZone" owner="faction.player">
+            <position x="850km" y="0" z="0"/>
+          </create_object>
+
+          <create_ship name="$DistanceTer" macro="macro.ship_ter_s_fighter_01_a_macro" zone="$DistanceZone" capturable="false">
+            <owner exact="faction.terran" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.terran" tags="tag.pilot"/></pilot>
+            <position x="-300km" y="0" z="0"/>
+          </create_ship>
+          <create_ship name="$DistanceTerM" macro="macro.ship_ter_m_corvette_01_a_macro" zone="$DistanceZone" capturable="false">
+            <owner exact="faction.terran" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.terran" tags="tag.pilot"/></pilot>
+            <position x="-300km" y="0" z="-15km"/>
+          </create_ship>
+          <create_ship name="$DistanceTerL" macro="macro.ship_ter_l_destroyer_01_a_macro" zone="$DistanceZone" capturable="false">
+            <owner exact="faction.terran" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.terran" tags="tag.pilot"/></pilot>
+            <position x="-315km" y="0" z="15km"/>
+          </create_ship>
+          <create_ship name="$DistanceTerXL" macro="macro.ship_ter_xl_carrier_01_a_macro" zone="$DistanceZone" capturable="false">
+            <owner exact="faction.terran" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.terran" tags="tag.pilot"/></pilot>
+            <position x="-330km" y="0" z="-30km"/>
+          </create_ship>
+          <create_ship name="$DistanceArg" macro="macro.ship_arg_s_scout_01_a_macro" zone="$DistanceZone" capturable="false">
+            <owner exact="faction.argon" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+            <position x="400km" y="0" z="0"/>
+          </create_ship>
+          <create_order object="$DistanceArg" id="'MoveGeneric'" immediate="true">
+            <param name="destination" value="$DistanceZone.sector"/>
+            <param name="position" value="$DistanceMoveTarget"/>
+          </create_order>
+          <create_order object="$DistanceTer" id="'Attack'" immediate="true">
+            <param name="primarytarget" value="$DistanceArg"/>
+            <param name="allowothertargets" value="false"/>
+            <param name="pursuetargets" value="true"/>
+            <param name="pursuedistance" value="800km"/>
+            <param name="vas_epai_issued_by_epai" value="true"/>
+            <param name="vas_epai_skip_ship_mayattack" value="false"/>
+            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="checkrelation" value="false"/>
+            <param name="internalorder" value="true"/>
+          </create_order>
+          <create_order object="$DistanceTerM" id="'Attack'" immediate="true">
+            <param name="primarytarget" value="$DistanceArg"/>
+            <param name="allowothertargets" value="false"/>
+            <param name="pursuetargets" value="true"/>
+            <param name="pursuedistance" value="800km"/>
+            <param name="vas_epai_issued_by_epai" value="true"/>
+            <param name="vas_epai_skip_ship_mayattack" value="false"/>
+            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="checkrelation" value="false"/>
+            <param name="internalorder" value="true"/>
+          </create_order>
+          <create_order object="$DistanceTerL" id="'Attack'" immediate="true">
+            <param name="primarytarget" value="$DistanceArg"/>
+            <param name="allowothertargets" value="false"/>
+            <param name="pursuetargets" value="true"/>
+            <param name="pursuedistance" value="800km"/>
+            <param name="vas_epai_issued_by_epai" value="true"/>
+            <param name="vas_epai_skip_ship_mayattack" value="false"/>
+            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="checkrelation" value="false"/>
+            <param name="internalorder" value="true"/>
+          </create_order>
+          <create_order object="$DistanceTerXL" id="'Attack'" immediate="true">
+            <param name="primarytarget" value="$DistanceArg"/>
+            <param name="allowothertargets" value="false"/>
+            <param name="pursuetargets" value="true"/>
+            <param name="pursuedistance" value="800km"/>
+            <param name="vas_epai_issued_by_epai" value="true"/>
+            <param name="vas_epai_skip_ship_mayattack" value="false"/>
+            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="checkrelation" value="false"/>
+            <param name="internalorder" value="true"/>
+          </create_order>
+        </do_if>
+
+        <!-- s13: player-owned attack variant of the highway pursuit test. -->
+        <do_if value="$PlayerHighwayZone">
+          <create_position name="$PlayerHighwayMoveTarget" object="$PlayerHighwayZone" space="$PlayerHighwayZone" x="310km" y="0" z="1km"/>
+          <create_ship name="$PlayerHighwayPar" macro="macro.ship_par_s_scout_01_a_macro" zone="$PlayerHighwayZone" capturable="false">
+            <owner exact="faction.paranid" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.paranid" tags="tag.pilot"/></pilot>
+            <position x="-20km" y="0" z="1km"/>
+          </create_ship>
+          <create_ship name="$PlayerHighwayPly" macro="macro.ship_arg_s_scout_01_a_macro" zone="$PlayerHighwayZone" capturable="false">
+            <owner exact="faction.player" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+            <position x="-80km" y="0" z="1km"/>
+          </create_ship>
+          <create_order object="$PlayerHighwayPar" id="'MoveGeneric'" immediate="true">
+            <param name="destination" value="$PlayerHighwayZone.sector"/>
+            <param name="position" value="$PlayerHighwayMoveTarget"/>
+          </create_order>
+          <create_order object="$PlayerHighwayPly" id="'Attack'" immediate="true">
+            <param name="primarytarget" value="$PlayerHighwayPar"/>
+            <param name="allowothertargets" value="false"/>
+            <param name="pursuetargets" value="true"/>
+            <param name="pursuedistance" value="800km"/>
+            <param name="vas_epai_issued_by_epai" value="true"/>
+            <param name="vas_epai_skip_ship_mayattack" value="false"/>
+            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="checkrelation" value="false"/>
+            <param name="internalorder" value="true"/>
+          </create_order>
+        </do_if>
+
+        <!-- s14/s15: player-owned attack variant of the gate pursuit test. -->
+        <do_if value="$PlayerGateOriginZone and $PlayerGateDestZone">
+          <create_position name="$PlayerGateMoveTarget" object="$PlayerGateDestZone" space="$PlayerGateDestZone" x="90km" y="0" z="0"/>
+          <create_ship name="$PlayerGatePar" macro="macro.ship_par_s_scout_01_a_macro" zone="$PlayerGateOriginZone" capturable="false">
+            <owner exact="faction.paranid" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.paranid" tags="tag.pilot"/></pilot>
+            <position x="-30km" y="0" z="0"/>
+          </create_ship>
+          <create_ship name="$PlayerGatePly" macro="macro.ship_arg_s_scout_01_a_macro" zone="$PlayerGateOriginZone" capturable="false">
+            <owner exact="faction.player" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+            <position x="-90km" y="0" z="0"/>
+          </create_ship>
+          <create_ship name="$PlayerGatePlyM" macro="macro.ship_arg_m_frigate_01_a_macro" zone="$PlayerGateOriginZone" capturable="false">
+            <owner exact="faction.player" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+            <position x="-90km" y="0" z="-10km"/>
+          </create_ship>
+          <create_ship name="$PlayerGatePlyL" macro="macro.ship_arg_l_destroyer_01_a_macro" zone="$PlayerGateOriginZone" capturable="false">
+            <owner exact="faction.player" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+            <position x="-100km" y="0" z="10km"/>
+          </create_ship>
+          <create_ship name="$PlayerGatePlyXL" macro="macro.ship_arg_xl_carrier_01_a_macro" zone="$PlayerGateOriginZone" capturable="false">
+            <owner exact="faction.player" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+            <position x="-110km" y="0" z="-20km"/>
+          </create_ship>
+          <create_order object="$PlayerGatePar" id="'MoveGeneric'" immediate="true">
+            <param name="destination" value="$PlayerGateDestZone.sector"/>
+            <param name="position" value="$PlayerGateMoveTarget"/>
+          </create_order>
+          <create_order object="$PlayerGatePly" id="'Attack'" immediate="true">
+            <param name="primarytarget" value="$PlayerGatePar"/>
+            <param name="allowothertargets" value="false"/>
+            <param name="pursuetargets" value="true"/>
+            <param name="pursuedistance" value="800km"/>
+            <param name="vas_epai_issued_by_epai" value="true"/>
+            <param name="vas_epai_skip_ship_mayattack" value="false"/>
+            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="checkrelation" value="false"/>
+            <param name="internalorder" value="true"/>
+          </create_order>
+          <create_order object="$PlayerGatePlyM" id="'Attack'" immediate="true">
+            <param name="primarytarget" value="$PlayerGatePar"/>
+            <param name="allowothertargets" value="false"/>
+            <param name="pursuetargets" value="true"/>
+            <param name="pursuedistance" value="800km"/>
+            <param name="vas_epai_issued_by_epai" value="true"/>
+            <param name="vas_epai_skip_ship_mayattack" value="false"/>
+            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="checkrelation" value="false"/>
+            <param name="internalorder" value="true"/>
+          </create_order>
+          <create_order object="$PlayerGatePlyL" id="'Attack'" immediate="true">
+            <param name="primarytarget" value="$PlayerGatePar"/>
+            <param name="allowothertargets" value="false"/>
+            <param name="pursuetargets" value="true"/>
+            <param name="pursuedistance" value="800km"/>
+            <param name="vas_epai_issued_by_epai" value="true"/>
+            <param name="vas_epai_skip_ship_mayattack" value="false"/>
+            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="checkrelation" value="false"/>
+            <param name="internalorder" value="true"/>
+          </create_order>
+          <create_order object="$PlayerGatePlyXL" id="'Attack'" immediate="true">
+            <param name="primarytarget" value="$PlayerGatePar"/>
+            <param name="allowothertargets" value="false"/>
+            <param name="pursuetargets" value="true"/>
+            <param name="pursuedistance" value="800km"/>
+            <param name="vas_epai_issued_by_epai" value="true"/>
+            <param name="vas_epai_skip_ship_mayattack" value="false"/>
+            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="checkrelation" value="false"/>
+            <param name="internalorder" value="true"/>
+          </create_order>
+        </do_if>
+
+        <!-- s16: player-owned attack variant of the 700 km initial separation test. -->
+        <do_if value="$PlayerDistanceZone">
+          <create_position name="$PlayerDistanceMoveTarget" object="$PlayerDistanceZone" space="$PlayerDistanceZone" x="2000km" y="0" z="0"/>
+
+          <create_object name="$PlayerDistanceBackwardParSat" macro="macro.vas_th_satellite_800km_macro" zone="$PlayerDistanceZone" owner="faction.paranid">
+            <position x="-150km" y="0" z="10km"/>
+          </create_object>
+          <create_object name="$PlayerDistanceBackwardPlayerSat" macro="macro.vas_th_satellite_800km_macro" zone="$PlayerDistanceZone" owner="faction.player">
+            <position x="-150km" y="0" z="0"/>
+          </create_object>
+          <create_object name="$PlayerDistanceMidParSat" macro="macro.vas_th_satellite_800km_macro" zone="$PlayerDistanceZone" owner="faction.paranid">
+            <position x="350km" y="0" z="10km"/>
+          </create_object>
+          <create_object name="$PlayerDistanceMidPlayerSat" macro="macro.vas_th_satellite_800km_macro" zone="$PlayerDistanceZone" owner="faction.player">
+            <position x="350km" y="0" z="0"/>
+          </create_object>
+          <create_object name="$PlayerDistanceForwardParSat" macro="macro.vas_th_satellite_800km_macro" zone="$PlayerDistanceZone" owner="faction.paranid">
+            <position x="850km" y="0" z="10km"/>
+          </create_object>
+          <create_object name="$PlayerDistanceForwardPlayerSat" macro="macro.vas_th_satellite_800km_macro" zone="$PlayerDistanceZone" owner="faction.player">
+            <position x="850km" y="0" z="0"/>
+          </create_object>
+
+          <create_ship name="$PlayerDistancePly" macro="macro.ship_par_s_fighter_01_a_macro" zone="$PlayerDistanceZone" capturable="false">
+            <owner exact="faction.player" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+            <position x="-300km" y="0" z="0"/>
+          </create_ship>
+          <create_ship name="$PlayerDistancePlyM" macro="macro.ship_arg_m_frigate_01_a_macro" zone="$PlayerDistanceZone" capturable="false">
+            <owner exact="faction.player" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+            <position x="-300km" y="0" z="-15km"/>
+          </create_ship>
+          <create_ship name="$PlayerDistancePlyL" macro="macro.ship_arg_l_destroyer_01_a_macro" zone="$PlayerDistanceZone" capturable="false">
+            <owner exact="faction.player" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+            <position x="-315km" y="0" z="15km"/>
+          </create_ship>
+          <create_ship name="$PlayerDistancePlyXL" macro="macro.ship_arg_xl_carrier_01_a_macro" zone="$PlayerDistanceZone" capturable="false">
+            <owner exact="faction.player" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+            <position x="-330km" y="0" z="-30km"/>
+          </create_ship>
+          <create_ship name="$PlayerDistancePar" macro="macro.ship_par_s_scout_01_a_macro" zone="$PlayerDistanceZone" capturable="false">
+            <owner exact="faction.paranid" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.paranid" tags="tag.pilot"/></pilot>
+            <position x="400km" y="0" z="0"/>
+          </create_ship>
+          <create_order object="$PlayerDistancePar" id="'MoveGeneric'" immediate="true">
+            <param name="destination" value="$PlayerDistanceZone.sector"/>
+            <param name="position" value="$PlayerDistanceMoveTarget"/>
+          </create_order>
+          <create_order object="$PlayerDistancePly" id="'Attack'" immediate="true">
+            <param name="primarytarget" value="$PlayerDistancePar"/>
+            <param name="allowothertargets" value="false"/>
+            <param name="pursuetargets" value="true"/>
+            <param name="pursuedistance" value="800km"/>
+            <param name="vas_epai_issued_by_epai" value="true"/>
+            <param name="vas_epai_skip_ship_mayattack" value="false"/>
+            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="checkrelation" value="false"/>
+            <param name="internalorder" value="true"/>
+          </create_order>
+          <create_order object="$PlayerDistancePlyM" id="'Attack'" immediate="true">
+            <param name="primarytarget" value="$PlayerDistancePar"/>
+            <param name="allowothertargets" value="false"/>
+            <param name="pursuetargets" value="true"/>
+            <param name="pursuedistance" value="800km"/>
+            <param name="vas_epai_issued_by_epai" value="true"/>
+            <param name="vas_epai_skip_ship_mayattack" value="false"/>
+            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="checkrelation" value="false"/>
+            <param name="internalorder" value="true"/>
+          </create_order>
+          <create_order object="$PlayerDistancePlyL" id="'Attack'" immediate="true">
+            <param name="primarytarget" value="$PlayerDistancePar"/>
+            <param name="allowothertargets" value="false"/>
+            <param name="pursuetargets" value="true"/>
+            <param name="pursuedistance" value="800km"/>
+            <param name="vas_epai_issued_by_epai" value="true"/>
+            <param name="vas_epai_skip_ship_mayattack" value="false"/>
+            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="checkrelation" value="false"/>
+            <param name="internalorder" value="true"/>
+          </create_order>
+          <create_order object="$PlayerDistancePlyXL" id="'Attack'" immediate="true">
+            <param name="primarytarget" value="$PlayerDistancePar"/>
+            <param name="allowothertargets" value="false"/>
+            <param name="pursuetargets" value="true"/>
+            <param name="pursuedistance" value="800km"/>
+            <param name="vas_epai_issued_by_epai" value="true"/>
+            <param name="vas_epai_skip_ship_mayattack" value="false"/>
+            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="checkrelation" value="false"/>
+            <param name="internalorder" value="true"/>
+          </create_order>
+        </do_if>
+
+        <!-- s17: direct TER-vs-ARG Attack orders mirror EPAI output and skip scanner/bravery selection. -->
+        <do_if value="$DirectTerArgZone">
+          <create_position name="$DirectTerArgMoveTarget" object="$DirectTerArgZone" space="$DirectTerArgZone" x="2000km" y="0" z="0"/>
+          <create_ship name="$DirectTerArgTerS" macro="macro.ship_ter_s_fighter_01_a_macro" zone="$DirectTerArgZone" capturable="false">
+            <owner exact="faction.terran" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.terran" tags="tag.pilot"/></pilot>
+            <position x="-300km" y="0" z="20km"/>
+          </create_ship>
+          <create_ship name="$DirectTerArgTerM" macro="macro.ship_ter_m_corvette_01_a_macro" zone="$DirectTerArgZone" capturable="false">
+            <owner exact="faction.terran" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.terran" tags="tag.pilot"/></pilot>
+            <position x="-300km" y="0" z="-20km"/>
+          </create_ship>
+          <create_ship name="$DirectTerArgArgXL" macro="macro.ship_arg_xl_carrier_01_a_macro" zone="$DirectTerArgZone" capturable="false">
+            <owner exact="faction.argon" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+            <position x="400km" y="0" z="20km"/>
+          </create_ship>
+          <create_ship name="$DirectTerArgArgL" macro="macro.ship_arg_l_destroyer_01_a_macro" zone="$DirectTerArgZone" capturable="false">
+            <owner exact="faction.argon" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+            <position x="400km" y="0" z="-20km"/>
+          </create_ship>
+          <create_order object="$DirectTerArgArgXL" id="'MoveGeneric'" immediate="true">
+            <param name="destination" value="$DirectTerArgZone.sector"/>
+            <param name="position" value="$DirectTerArgMoveTarget"/>
+          </create_order>
+          <create_order object="$DirectTerArgArgL" id="'MoveGeneric'" immediate="true">
+            <param name="destination" value="$DirectTerArgZone.sector"/>
+            <param name="position" value="$DirectTerArgMoveTarget"/>
+          </create_order>
+          <create_order id="'Attack'" object="$DirectTerArgTerS" immediate="true">
+            <param name="primarytarget" value="$DirectTerArgArgXL"/>
+            <param name="allowothertargets" value="false"/>
+            <param name="pursuetargets" value="true"/>
+            <param name="pursuedistance" value="800km"/>
+            <param name="vas_epai_issued_by_epai" value="true"/>
+            <param name="vas_epai_skip_ship_mayattack" value="false"/>
+            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="checkrelation" value="false"/>
+            <param name="internalorder" value="true"/>
+          </create_order>
+          <create_order id="'Attack'" object="$DirectTerArgTerM" immediate="true">
+            <param name="primarytarget" value="$DirectTerArgArgL"/>
+            <param name="allowothertargets" value="false"/>
+            <param name="pursuetargets" value="true"/>
+            <param name="pursuedistance" value="800km"/>
+            <param name="vas_epai_issued_by_epai" value="true"/>
+            <param name="vas_epai_skip_ship_mayattack" value="false"/>
+            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="checkrelation" value="false"/>
+            <param name="internalorder" value="true"/>
+          </create_order>
+        </do_if>
+
+        <!-- s18: direct player-vs-PAR Attack orders mirror EPAI output and skip scanner/bravery selection. -->
+        <do_if value="$DirectPlayerParZone">
+          <create_position name="$DirectPlayerParMoveTarget" object="$DirectPlayerParZone" space="$DirectPlayerParZone" x="2000km" y="0" z="0"/>
+          <create_ship name="$DirectPlayerParPlayerS" macro="macro.ship_arg_s_scout_01_a_macro" zone="$DirectPlayerParZone" capturable="false">
+            <owner exact="faction.player" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+            <position x="-300km" y="0" z="20km"/>
+          </create_ship>
+          <create_ship name="$DirectPlayerParPlayerM" macro="macro.ship_arg_m_frigate_01_a_macro" zone="$DirectPlayerParZone" capturable="false">
+            <owner exact="faction.player" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+            <position x="-300km" y="0" z="-20km"/>
+          </create_ship>
+          <create_ship name="$DirectPlayerParParXL" macro="macro.ship_par_xl_carrier_01_a_macro" zone="$DirectPlayerParZone" capturable="false">
+            <owner exact="faction.paranid" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.paranid" tags="tag.pilot"/></pilot>
+            <position x="400km" y="0" z="20km"/>
+          </create_ship>
+          <create_ship name="$DirectPlayerParParL" macro="macro.ship_par_l_destroyer_01_a_macro" zone="$DirectPlayerParZone" capturable="false">
+            <owner exact="faction.paranid" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.paranid" tags="tag.pilot"/></pilot>
+            <position x="400km" y="0" z="-20km"/>
+          </create_ship>
+          <create_order object="$DirectPlayerParParXL" id="'MoveGeneric'" immediate="true">
+            <param name="destination" value="$DirectPlayerParZone.sector"/>
+            <param name="position" value="$DirectPlayerParMoveTarget"/>
+          </create_order>
+          <create_order object="$DirectPlayerParParL" id="'MoveGeneric'" immediate="true">
+            <param name="destination" value="$DirectPlayerParZone.sector"/>
+            <param name="position" value="$DirectPlayerParMoveTarget"/>
+          </create_order>
+          <create_order id="'Attack'" object="$DirectPlayerParPlayerS" immediate="true">
+            <param name="primarytarget" value="$DirectPlayerParParXL"/>
+            <param name="allowothertargets" value="false"/>
+            <param name="pursuetargets" value="true"/>
+            <param name="pursuedistance" value="800km"/>
+            <param name="vas_epai_issued_by_epai" value="true"/>
+            <param name="vas_epai_skip_ship_mayattack" value="false"/>
+            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="checkrelation" value="false"/>
+            <param name="internalorder" value="true"/>
+          </create_order>
+          <create_order id="'Attack'" object="$DirectPlayerParPlayerM" immediate="true">
+            <param name="primarytarget" value="$DirectPlayerParParL"/>
+            <param name="allowothertargets" value="false"/>
+            <param name="pursuetargets" value="true"/>
+            <param name="pursuedistance" value="800km"/>
+            <param name="vas_epai_issued_by_epai" value="true"/>
+            <param name="vas_epai_skip_ship_mayattack" value="false"/>
+            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="checkrelation" value="false"/>
+            <param name="internalorder" value="true"/>
+          </create_order>
+        </do_if>
+
+        <!-- s19: ARG starts far away while TER waits in place; useful for checking the wake interrupt once real fighting starts. -->
+        <do_if value="$ActiveFightZone">
+          <create_ship name="$ActiveFightArg" macro="macro.ship_arg_s_scout_01_a_macro" zone="$ActiveFightZone" capturable="false">
+            <owner exact="faction.argon" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+            <position x="-399km" y="0" z="0"/>
+          </create_ship>
+          <create_ship name="$ActiveFightTer" macro="macro.ship_arg_s_scout_01_a_macro" zone="$ActiveFightZone" capturable="false">
+            <owner exact="faction.terran" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.terran" tags="tag.pilot"/></pilot>
+            <position x="399km" y="0" z="0"/>
+          </create_ship>
+          <create_order object="$ActiveFightArg" id="'Patrol'" default="true">
+            <param name="range" value="class.zone"/>
+          </create_order>
+          <create_order object="$ActiveFightTer" id="'Wait'" default="true">
+            <param name="allowdocked" value="false"/>
+            <param name="fidget" value="false"/>
+          </create_order>
+        </do_if>
+
+        <debug_text text="'[VAS_EPAI_PursuitTests] pursuit test ships created'" chance="100"/>
+      </actions>
+    </cue>
+  </cues>
+</mdscript>

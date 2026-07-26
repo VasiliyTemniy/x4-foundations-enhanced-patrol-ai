@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<language>
+  <page id="2026062301" title="VAS EPAI Test Harness" descr="Job names for the Enhanced Patrol AI test harness" voice="no">
+    <t id="1000">TH Argon Carrier Patrol</t>
+    <t id="1001">TH Argon Destroyer Patrol</t>
+    <t id="1002">TH Argon Carrier Escort M</t>
+    <t id="1003">TH Argon Carrier Escort S</t>
+    <t id="1004">TH Argon Sub-Destroyer</t>
+    <t id="1005">TH Argon Escort M</t>
+    <t id="1006">TH Argon Escort S</t>
+    <t id="1100">TH Terran Carrier Group</t>
+    <t id="1101">TH Terran Destroyer Group</t>
+    <t id="1102">TH Terran Carrier Escort M</t>
+    <t id="1103">TH Terran Carrier Escort S</t>
+    <t id="1104">TH Terran Sub-Destroyer</t>
+    <t id="1105">TH Terran Escort M</t>
+    <t id="1106">TH Terran Escort S</t>
+    <t id="1110">TH Terran Civil Miner</t>
+    <t id="1111">TH Terran Civil Trader</t>
+    <t id="1112">TH Paranid Civil Miner</t>
+    <t id="1113">TH Paranid Civil Trader</t>
+    <t id="1200">TH Argon Targeting Scout Root</t>
+    <t id="1201">TH Argon Targeting Scout Subordinate</t>
+    <t id="1202">TH Terran Targeting Destroyer</t>
+    <t id="1301">EPAI Test Satellite</t>
+    <t id="1302">Long-range satellite used by the Enhanced Patrol AI test harness.</t>
+  </page>
+  <page id="2026062302" title="VAS EPAI Test Harness - Map" descr="Gamestart text for the test harness" voice="no">
+    <t id="1">[VAS] Enhanced Patrol AI - Test Harness</t>
+    <t id="2">Empty technical test universe for observing Enhanced Patrol AI: opposing task forces, faction wars, target stations, and pursuit scenarios, with full satellite vision.</t>
+    <t id="150">Enhanced Patrol AI test-harness space.</t>
+  </page>
+</language>

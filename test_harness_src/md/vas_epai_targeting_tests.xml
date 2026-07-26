@@ -1,0 +1,437 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mdscript name="VAS_EPAI_TargetingTests" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="md.xsd">
+  <!--
+    Controlled targeting scenarios for EPAI.
+
+    s20: exact MD-created ships to check that an EPAI attack does not continue onto
+         a friendly player bystander after the hostile primary dies.
+    s21: job-created ARG VFF branch to check that follow-up target acquisition uses
+         explicit VFF secondarytargets rather than a separate post-attack patrol scan.
+    s22: MD-created ARG civilian miners closer than a military scout to check whether
+         follow-up/secondary scans respect the civilian attack override flag.
+    s25: solo ARG patrol plus a stronger ARG station attack force, checking that EPAI
+         joins the far station attack and builds route waypoints around intervening stations.
+    s26/s27: TER patrol sees only an ARG subordinate; the ARG commander is in another
+             sector and unseen, proving VFF discovery does not require true fleet flagman.
+  -->
+  <cues>
+    <cue name="SetupTargetingTests">
+      <conditions>
+        <event_cue_signalled cue="md.Setup.GameStart"/>
+        <check_value value="player.galaxy.macro == macro.vas_th_galaxy_macro"/>
+      </conditions>
+      <actions>
+        <find_zone name="$FriendlyZone" macro="macro.zone_vas_th_targeting_friendly_macro"/>
+        <find_zone name="$VFFArgZone" macro="macro.zone_vas_th_targeting_vff_arg_macro"/>
+        <find_zone name="$VFFTerZone" macro="macro.zone_vas_th_targeting_vff_ter_macro"/>
+        <find_zone name="$CivilianScanZone" macro="macro.zone_vas_th_targeting_civilian_scan_macro"/>
+        <find_zone name="$StationWaypointZone" macro="macro.zone_vas_th_station_waypoint_macro"/>
+        <find_zone name="$HiddenVFFScanZone" macro="macro.zone_vas_th_hidden_vff_scan_macro"/>
+        <find_zone name="$HiddenVFFCommanderZone" macro="macro.zone_vas_th_hidden_vff_commander_macro"/>
+
+        <do_for_each name="$SatZone" in="[$FriendlyZone, $VFFArgZone, $VFFTerZone, $CivilianScanZone, $StationWaypointZone]">
+          <do_if value="$SatZone">
+            <create_object name="$TargetingArgSat" macro="macro.vas_th_satellite_800km_macro" zone="$SatZone" owner="faction.argon">
+              <position x="10km" y="0" z="10km"/>
+            </create_object>
+            <create_object name="$TargetingTerSat" macro="macro.vas_th_satellite_800km_macro" zone="$SatZone" owner="faction.terran">
+              <position x="-10km" y="0" z="-10km"/>
+            </create_object>
+            <create_object name="$TargetingPlayerSat" macro="macro.vas_th_satellite_800km_macro" zone="$SatZone" owner="faction.player">
+              <position x="0" y="0" z="0"/>
+            </create_object>
+          </do_if>
+        </do_for_each>
+
+        <do_for_each name="$SatZoneNearGate" in="[$HiddenVFFScanZone, $HiddenVFFCommanderZone]">
+          <do_if value="$SatZoneNearGate">
+            <create_object name="$TargetingArgSat" macro="macro.vas_th_satellite_800km_macro" zone="$SatZoneNearGate" owner="faction.argon">
+              <position x="10km" y="0" z="90km"/>
+            </create_object>
+            <create_object name="$TargetingTerSat" macro="macro.vas_th_satellite_800km_macro" zone="$SatZoneNearGate" owner="faction.terran">
+              <position x="-10km" y="0" z="90km"/>
+            </create_object>
+            <create_object name="$TargetingPlayerSat" macro="macro.vas_th_satellite_800km_macro" zone="$SatZoneNearGate" owner="faction.player">
+              <position x="0" y="0" z="100km"/>
+            </create_object>
+          </do_if>
+        </do_for_each>
+
+        <!-- s20: TER patrol, ARG target 10 km away, friendly player ship between them. -->
+        <do_if value="$FriendlyZone">
+          <create_ship name="$FriendlyTer" macro="macro.ship_ter_l_destroyer_01_a_macro" zone="$FriendlyZone" capturable="false">
+            <owner exact="faction.terran" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.terran" tags="tag.pilot"/></pilot>
+            <position x="-5km" y="0" z="1km"/>
+          </create_ship>
+          <create_ship name="$FriendlyArg" macro="macro.ship_arg_s_scout_01_a_macro" zone="$FriendlyZone" capturable="false">
+            <owner exact="faction.argon" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+            <position x="5km" y="0" z="1km"/>
+          </create_ship>
+          <create_ship name="$FriendlyPlayer" macro="macro.ship_arg_s_scout_01_a_macro" zone="$FriendlyZone" capturable="false">
+            <owner exact="faction.player" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+            <position x="0" y="0" z="1km"/>
+          </create_ship>
+
+          <create_order object="$FriendlyTer" id="'Patrol'" default="true">
+            <param name="range" value="class.zone"/>
+          </create_order>
+          <create_order object="$FriendlyArg" id="'Wait'" default="true">
+            <param name="allowdocked" value="false"/>
+            <param name="fidget" value="false"/>
+          </create_order>
+          <create_order object="$FriendlyPlayer" id="'Wait'" default="true">
+            <param name="allowdocked" value="false"/>
+            <param name="fidget" value="false"/>
+          </create_order>
+
+          <run_actions ref="FreezeShipEngines">
+            <param name="TargetShip" value="$FriendlyArg"/>
+          </run_actions>
+          <run_actions ref="FreezeShipEngines">
+            <param name="TargetShip" value="$FriendlyPlayer"/>
+          </run_actions>
+        </do_if>
+
+        <!-- s22: TER patrol, two closer ARG civilian miners, one farther ARG military scout. -->
+        <do_if value="$CivilianScanZone">
+          <create_ship name="$CivilianScanTer" macro="macro.ship_ter_l_destroyer_01_a_macro" zone="$CivilianScanZone" capturable="false">
+            <owner exact="faction.terran" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.terran" tags="tag.pilot"/></pilot>
+            <position x="0" y="0" z="0"/>
+          </create_ship>
+          <create_ship name="$CivilianScanArgMinerA" macro="macro.ship_arg_m_miner_solid_01_a_macro" zone="$CivilianScanZone" capturable="false">
+            <owner exact="faction.argon" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+            <position x="4km" y="0" z="0"/>
+          </create_ship>
+          <create_ship name="$CivilianScanArgMinerB" macro="macro.ship_arg_m_miner_solid_01_a_macro" zone="$CivilianScanZone" capturable="false">
+            <owner exact="faction.argon" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+            <position x="-6km" y="0" z="0"/>
+          </create_ship>
+          <create_ship name="$CivilianScanArgScout" macro="macro.ship_arg_s_scout_01_a_macro" zone="$CivilianScanZone" capturable="false">
+            <owner exact="faction.argon" overridenpc="true"/>
+            <loadout/>
+            <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+            <position x="120km" y="0" z="0"/>
+          </create_ship>
+
+          <create_order object="$CivilianScanTer" id="'Patrol'" default="true">
+            <param name="range" value="class.zone"/>
+          </create_order>
+          <create_order object="$CivilianScanArgMinerA" id="'Wait'" default="true">
+            <param name="allowdocked" value="false"/>
+            <param name="fidget" value="false"/>
+          </create_order>
+          <create_order object="$CivilianScanArgMinerB" id="'Wait'" default="true">
+            <param name="allowdocked" value="false"/>
+            <param name="fidget" value="false"/>
+          </create_order>
+          <create_order object="$CivilianScanArgScout" id="'Wait'" default="true">
+            <param name="allowdocked" value="false"/>
+            <param name="fidget" value="false"/>
+          </create_order>
+
+          <run_actions ref="FreezeShipEngines">
+            <param name="TargetShip" value="$CivilianScanArgMinerA"/>
+          </run_actions>
+          <run_actions ref="FreezeShipEngines">
+            <param name="TargetShip" value="$CivilianScanArgMinerB"/>
+          </run_actions>
+          <run_actions ref="FreezeShipEngines">
+            <param name="TargetShip" value="$CivilianScanArgScout"/>
+          </run_actions>
+        </do_if>
+
+        <debug_text text="'[VAS_EPAI_TargetingTests] s20/s22 targeting ships created; waiting for s21 jobs, s25 station target, and s26/s27 hidden-commander VFF'" chance="100"/>
+      </actions>
+
+      <cues>
+        <cue name="CreateHiddenCommanderVFFShips">
+          <delay exact="2s"/>
+          <actions>
+            <run_actions ref="CreateHiddenCommanderVFFShipsBody"/>
+          </actions>
+        </cue>
+        <cue name="PositionVFFJobShips">
+          <delay exact="10s"/>
+          <actions>
+            <run_actions ref="PositionVFFJobShipsBody"/>
+          </actions>
+        </cue>
+        <cue name="CreateStationWaypointShips">
+          <delay exact="10s"/>
+          <actions>
+            <run_actions ref="CreateStationWaypointShipsBody"/>
+          </actions>
+        </cue>
+      </cues>
+    </cue>
+
+    <library name="PositionVFFJobShipsBody" purpose="run_actions">
+      <actions>
+        <find_zone name="$VFFArgZone" macro="macro.zone_vas_th_targeting_vff_arg_macro"/>
+        <find_zone name="$VFFTerZone" macro="macro.zone_vas_th_targeting_vff_ter_macro"/>
+        <do_if value="not @$VFFArgZone or not @$VFFTerZone">
+          <reset_cue cue="PositionVFFJobShips"/>
+          <return/>
+        </do_if>
+        <do_else>
+
+          <set_value name="$VFFSector" exact="$VFFArgZone.sector"/>
+          <find_ship name="$VFFTer" space="$VFFSector" owner="faction.terran" class="class.ship_l"/>
+          <find_ship name="$VFFArgRoots" space="$VFFSector" owner="faction.argon" class="class.ship_s" hascommander="false" multiple="true"/>
+
+          <do_if value="not @$VFFTer or not @$VFFArgRoots">
+            <reset_cue cue="PositionVFFJobShips"/>
+            <return/>
+          </do_if>
+
+          <do_if value="$VFFArgRoots.count == 0">
+            <reset_cue cue="PositionVFFJobShips"/>
+            <return/>
+          </do_if>
+
+          <remove_value name="$VFFArgRoot"/>
+          <set_value name="$VFFArgSubCount" exact="0"/>
+          <do_for_each name="$VFFArgRootCandidate" in="$VFFArgRoots">
+            <do_if value="$VFFArgRootCandidate.subordinates.count ge 4">
+              <set_value name="$VFFArgRoot" exact="$VFFArgRootCandidate"/>
+              <set_value name="$VFFArgSubCount" exact="$VFFArgRootCandidate.subordinates.count"/>
+              <break/>
+            </do_if>
+          </do_for_each>
+
+          <do_if value="not @$VFFTer or not @$VFFArgRoot or $VFFArgSubCount lt 4">
+            <debug_text text="'[VAS_EPAI_TargetingTests] waiting for s21 job ships: ter=' + @$VFFTer + ' argRoot=' + @$VFFArgRoot + ' subs=' + $VFFArgSubCount" chance="100"/>
+            <reset_cue cue="PositionVFFJobShips"/>
+            <return/>
+          </do_if>
+          <do_else>
+
+            <create_position name="$VFFTerPos" object="$VFFTerZone" space="$VFFTerZone" x="0" y="0" z="0"/>
+            <create_position name="$VFFArgRootPos" object="$VFFArgZone" space="$VFFArgZone" x="0" y="0" z="2km"/>
+            <warp object="$VFFTer" zone="$VFFTerZone">
+              <safepos value="$VFFTerPos"/>
+            </warp>
+            <warp object="$VFFArgRoot" zone="$VFFArgZone">
+              <safepos value="$VFFArgRootPos"/>
+            </warp>
+            <run_actions ref="FreezeShipEngines">
+              <param name="TargetShip" value="$VFFArgRoot"/>
+            </run_actions>
+
+            <do_all exact="$VFFArgRoot.subordinates.count" counter="$i">
+              <set_value name="$VFFArgSub" exact="$VFFArgRoot.subordinates.{$i}"/>
+              <create_position name="$VFFArgSubPos" object="$VFFArgZone" space="$VFFArgZone" x="$i * 1km" y="0" z="2km"/>
+              <warp object="$VFFArgSub" zone="$VFFArgZone">
+                <safepos value="$VFFArgSubPos"/>
+              </warp>
+              <create_order object="$VFFArgSub" id="'Wait'" default="true">
+                <param name="allowdocked" value="false"/>
+                <param name="fidget" value="false"/>
+              </create_order>
+              <run_actions ref="FreezeShipEngines">
+                <param name="TargetShip" value="$VFFArgSub"/>
+              </run_actions>
+            </do_all>
+
+            <create_order object="$VFFTer" id="'Patrol'" default="true">
+              <param name="range" value="class.zone"/>
+            </create_order>
+            <create_order object="$VFFArgRoot" id="'Wait'" default="true">
+              <param name="allowdocked" value="false"/>
+              <param name="fidget" value="false"/>
+            </create_order>
+
+            <debug_text text="'[VAS_EPAI_TargetingTests] s21 VFF job ships positioned: ter=' + $VFFTer.idcode + ' argRoot=' + $VFFArgRoot.idcode + ' subs=' + $VFFArgRoot.subordinates.count" chance="100"/>
+          </do_else>
+        </do_else>
+      </actions>
+    </library>
+
+    <library name="CreateHiddenCommanderVFFShipsBody" purpose="run_actions">
+      <actions>
+        <find_zone name="$HiddenVFFScanZone" macro="macro.zone_vas_th_hidden_vff_scan_macro"/>
+        <find_zone name="$HiddenVFFCommanderZone" macro="macro.zone_vas_th_hidden_vff_commander_macro"/>
+        <do_if value="not @$HiddenVFFScanZone or not @$HiddenVFFCommanderZone">
+          <debug_text text="'[VAS_EPAI_TargetingTests] s26/s27 hidden-commander VFF zones not ready'" chance="100"/>
+          <reset_cue cue="CreateHiddenCommanderVFFShips"/>
+          <return/>
+        </do_if>
+
+        <!-- s26/s27: the old VFF preprocessor skipped a visible subordinate when
+             its real commander was unseen in the next sector. The 120 km ship gap
+             prevents direct radar contact, leaving satellite/scan visibility to expose the bug. -->
+        <create_position name="$HiddenVFFCommanderMoveTarget" object="$HiddenVFFCommanderZone" space="$HiddenVFFCommanderZone" x="20km" y="0" z="0"/>
+        <create_ship name="$HiddenVFFTer" macro="macro.ship_ter_m_corvette_01_a_macro" zone="$HiddenVFFScanZone" capturable="false">
+          <owner exact="faction.terran" overridenpc="true"/>
+          <loadout/>
+          <pilot><select faction="faction.terran" tags="tag.pilot"/></pilot>
+          <position x="-300km" y="0" z="0"/>
+        </create_ship>
+        <create_ship name="$HiddenVFFArgCommander" macro="macro.ship_arg_s_fighter_01_a_macro" zone="$HiddenVFFCommanderZone" capturable="false">
+          <owner exact="faction.argon" overridenpc="true"/>
+          <loadout/>
+          <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+          <position x="20km" y="0" z="0"/>
+        </create_ship>
+        <create_ship name="$HiddenVFFArgSubordinate" macro="macro.ship_arg_s_fighter_01_a_macro" zone="$HiddenVFFScanZone" capturable="false">
+          <owner exact="faction.argon" overridenpc="true"/>
+          <loadout/>
+          <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+          <position x="-180km" y="0" z="0"/>
+        </create_ship>
+
+        <set_object_commander object="$HiddenVFFArgSubordinate" commander="$HiddenVFFArgCommander" assignment="assignment.attack"/>
+
+        <create_order object="$HiddenVFFTer" id="'Patrol'" default="true">
+          <param name="range" value="class.zone"/>
+        </create_order>
+        <create_order object="$HiddenVFFArgCommander" id="'Wait'" default="true">
+          <param name="allowdocked" value="false"/>
+          <param name="fidget" value="false"/>
+        </create_order>
+        <create_order object="$HiddenVFFArgSubordinate" id="'MoveGeneric'" immediate="true">
+          <param name="destination" value="$HiddenVFFCommanderZone.sector"/>
+          <param name="position" value="$HiddenVFFCommanderMoveTarget"/>
+        </create_order>
+
+        <run_actions ref="FreezeShipEngines">
+          <param name="TargetShip" value="$HiddenVFFArgCommander"/>
+        </run_actions>
+
+        <debug_text text="'[VAS_EPAI_TargetingTests] s26/s27 hidden-commander VFF ships created: ter=' + $HiddenVFFTer.idcode + ' argCommander=' + $HiddenVFFArgCommander.idcode + ' argSub=' + $HiddenVFFArgSubordinate.idcode" chance="100"/>
+      </actions>
+    </library>
+
+    <library name="CreateStationWaypointShipsBody" purpose="run_actions">
+      <actions>
+        <debug_text text="'[VAS_EPAI_TargetingTests] s25 station-waypoint start'" chance="100"/>
+        <find_zone name="$StationWaypointZone" macro="macro.zone_vas_th_station_waypoint_macro"/>
+        <do_if value="not @$StationWaypointZone">
+          <debug_text text="'[VAS_EPAI_TargetingTests] s25 station-waypoint no station waypoint zone found'" chance="100"/>
+          <reset_cue cue="CreateStationWaypointShips"/>
+          <return/>
+        </do_if>
+
+        <set_value name="$StationWaypointSector" exact="$StationWaypointZone.sector"/>
+        <find_station name="$StationWaypointStations" space="$StationWaypointSector" owner="faction.terran" multiple="true"/>
+        <do_if value="not @$StationWaypointStations">
+          <debug_text text="'[VAS_EPAI_TargetingTests] s25 station-waypoint no station waypoint sector found'" chance="100"/>
+          <reset_cue cue="CreateStationWaypointShips"/>
+          <return/>
+        </do_if>
+
+        <set_value name="$StationWaypointTargetTag" exact="'Waypoint Joint Target (s25)'"/>
+        <remove_value name="$StationWaypointTarget"/>
+        <do_for_each name="$StationWaypointStation" in="$StationWaypointStations">
+          <!-- Replace-and-compare: the name changed iff it contained the target tag.
+               Station knownname can include the owner prefix, e.g. "TER ...". -->
+          <set_value name="$StationWaypointName" exact="$StationWaypointStation.knownname"/>
+          <set_value name="$StationWaypointNameBefore" exact="$StationWaypointName"/>
+          <substitute_text text="$StationWaypointName">
+            <replace string="$StationWaypointTargetTag" with="''"/>
+          </substitute_text>
+          <do_if value="$StationWaypointNameBefore != $StationWaypointName">
+            <set_value name="$StationWaypointTarget" exact="$StationWaypointStation"/>
+            <break/>
+          </do_if>
+        </do_for_each>
+
+        <do_if value="not @$StationWaypointTarget">
+          <debug_text text="'[VAS_EPAI_TargetingTests] s25 station-waypoint no target station found - looking for ' + $StationWaypointTargetTag" chance="100"/>
+          <reset_cue cue="CreateStationWaypointShips"/>
+          <return/>
+        </do_if>
+
+        <create_ship name="$WaypointSoloArg" macro="macro.ship_arg_l_destroyer_01_a_macro" zone="$StationWaypointZone" capturable="false">
+          <owner exact="faction.argon" overridenpc="true"/>
+          <loadout/>
+          <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+          <position x="-200km" y="0" z="0"/>
+        </create_ship>
+        <create_order object="$WaypointSoloArg" id="'Patrol'" default="true">
+          <param name="range" value="class.zone"/>
+        </create_order>
+
+        <create_ship name="$WaypointAttackRootA" macro="macro.ship_arg_l_destroyer_01_a_macro" zone="$StationWaypointZone" capturable="false">
+          <owner exact="faction.argon" overridenpc="true"/>
+          <loadout/>
+          <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+          <position x="220km" y="20km" z="0"/>
+        </create_ship>
+        <create_ship name="$WaypointAttackRootB" macro="macro.ship_arg_l_destroyer_01_a_macro" zone="$StationWaypointZone" capturable="false">
+          <owner exact="faction.argon" overridenpc="true"/>
+          <loadout/>
+          <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+          <position x="220km" y="-20km" z="0"/>
+        </create_ship>
+
+        <create_ship name="$WaypointAttackSubA1" macro="macro.ship_arg_l_destroyer_01_a_macro" zone="$StationWaypointZone" capturable="false">
+          <owner exact="faction.argon" overridenpc="true"/>
+          <loadout/>
+          <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+          <position x="230km" y="30km" z="0"/>
+        </create_ship>
+        <create_ship name="$WaypointAttackSubA2" macro="macro.ship_arg_l_destroyer_01_a_macro" zone="$StationWaypointZone" capturable="false">
+          <owner exact="faction.argon" overridenpc="true"/>
+          <loadout/>
+          <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+          <position x="230km" y="10km" z="0"/>
+        </create_ship>
+        <create_ship name="$WaypointAttackSubB1" macro="macro.ship_arg_l_destroyer_01_a_macro" zone="$StationWaypointZone" capturable="false">
+          <owner exact="faction.argon" overridenpc="true"/>
+          <loadout/>
+          <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+          <position x="230km" y="-10km" z="0"/>
+        </create_ship>
+        <create_ship name="$WaypointAttackSubB2" macro="macro.ship_arg_l_destroyer_01_a_macro" zone="$StationWaypointZone" capturable="false">
+          <owner exact="faction.argon" overridenpc="true"/>
+          <loadout/>
+          <pilot><select faction="faction.argon" tags="tag.pilot"/></pilot>
+          <position x="230km" y="-30km" z="0"/>
+        </create_ship>
+
+        <set_object_commander object="$WaypointAttackSubA1" commander="$WaypointAttackRootA" assignment="assignment.attack"/>
+        <set_object_commander object="$WaypointAttackSubA2" commander="$WaypointAttackRootA" assignment="assignment.attack"/>
+        <set_object_commander object="$WaypointAttackSubB1" commander="$WaypointAttackRootB" assignment="assignment.attack"/>
+        <set_object_commander object="$WaypointAttackSubB2" commander="$WaypointAttackRootB" assignment="assignment.attack"/>
+
+        <create_order object="$WaypointAttackRootA" id="'Attack'" immediate="true">
+          <param name="primarytarget" value="$StationWaypointTarget"/>
+          <param name="allowothertargets" value="false"/>
+          <param name="pursuetargets" value="true"/>
+        </create_order>
+        <create_order object="$WaypointAttackRootB" id="'Attack'" immediate="true">
+          <param name="primarytarget" value="$StationWaypointTarget"/>
+          <param name="allowothertargets" value="false"/>
+          <param name="pursuetargets" value="true"/>
+        </create_order>
+
+        <debug_text text="'[VAS_EPAI_TargetingTests] s25 station-waypoint ships created: solo=' + $WaypointSoloArg.idcode + ' target=' + $StationWaypointTarget.idcode" chance="100"/>
+      </actions>
+    </library>
+
+    <library name="FreezeShipEngines" purpose="run_actions">
+      <params>
+        <param name="TargetShip"/>
+      </params>
+      <actions>
+        <find_object_component name="$TargetEngines" object="$TargetShip" class="class.engine" multiple="true"/>
+        <do_for_each name="$TargetEngine" in="$TargetEngines">
+          <set_object_hacked object="$TargetEngine" duration="9999h"/>
+        </do_for_each>
+      </actions>
+    </library>
+  </cues>
+</mdscript>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Area properties for the first 8 custom clusters. Names are intentionally left to macro ids,
+  matching the later technical pursuit sectors.
+-->
+<diff xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <add sel="/defaults">
+
+    <dataset macro="vas_th_cluster01_macro">
+      <properties>
+        <area sunlight="1" economy="0.25" security="0.75"/>
+      </properties>
+    </dataset>
+
+    <dataset macro="vas_th_cluster02_macro">
+      <properties>
+        <area sunlight="1" economy="0.25" security="0.75"/>
+      </properties>
+    </dataset>
+
+    <dataset macro="vas_th_cluster03_macro">
+      <properties>
+        <area sunlight="1" economy="0.25" security="0.75"/>
+      </properties>
+    </dataset>
+
+    <dataset macro="vas_th_cluster04_macro">
+      <properties>
+        <area sunlight="1" economy="0.25" security="0.75"/>
+      </properties>
+    </dataset>
+
+    <dataset macro="vas_th_cluster05_macro">
+      <properties>
+        <area sunlight="1" economy="0.25" security="0.5"/>
+      </properties>
+    </dataset>
+
+    <dataset macro="vas_th_cluster06_macro">
+      <properties>
+        <area sunlight="1" economy="0.25" security="0.5"/>
+      </properties>
+    </dataset>
+
+    <dataset macro="vas_th_cluster07_macro">
+      <properties>
+        <area sunlight="1" economy="0.25" security="0.5"/>
+      </properties>
+    </dataset>
+
+    <dataset macro="vas_th_cluster08_macro">
+      <properties>
+        <area sunlight="1" economy="0.25" security="0.5"/>
+      </properties>
+    </dataset>
+
+    <dataset macro="vas_th_cluster20_macro">
+      <properties>
+        <area sunlight="1" economy="0.25" security="0.75"/>
+      </properties>
+    </dataset>
+
+    <dataset macro="vas_th_cluster21_macro">
+      <properties>
+        <area sunlight="1" economy="0.25" security="0.75"/>
+      </properties>
+    </dataset>
+
+  </add>
+</diff>

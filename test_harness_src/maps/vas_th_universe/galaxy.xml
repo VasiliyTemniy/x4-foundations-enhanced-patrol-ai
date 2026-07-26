@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Enhanced Patrol AI - Test Harness: custom EMPTY galaxy.
+
+  The gamestart's <location galaxy="vas_th_galaxy_macro"> points the new game at THIS
+  galaxy instead of xu_ep2_universe_macro. The vanilla universe is never instantiated,
+  so there are no vanilla ships, jobs, stations, economy or traffic to interfere with
+  the test. Only the custom test sectors below exist.
+-->
+<macros>
+  <macro name="vas_th_galaxy_macro" class="galaxy">
+    <component ref="standardgalaxy"/>
+    <connections>
+      <connection name="vas_th_cluster01_connection" ref="clusters">
+        <offset><position x="0"        y="0" z="0"/></offset>
+        <macro ref="vas_th_cluster01_macro" connection="galaxy"/>
+      </connection>
+      <connection name="vas_th_cluster02_connection" ref="clusters">
+        <offset><position x="20000000" y="0" z="0"/></offset>
+        <macro ref="vas_th_cluster02_macro" connection="galaxy"/>
+      </connection>
+      <connection name="vas_th_cluster03_connection" ref="clusters">
+        <offset><position x="40000000" y="0" z="0"/></offset>
+        <macro ref="vas_th_cluster03_macro" connection="galaxy"/>
+      </connection>
+      <connection name="vas_th_cluster04_connection" ref="clusters">
+        <offset><position x="60000000" y="0" z="0"/></offset>
+        <macro ref="vas_th_cluster04_macro" connection="galaxy"/>
+      </connection>
+      <connection name="vas_th_cluster05_connection" ref="clusters">
+        <offset><position x="0"        y="0" z="20000000"/></offset>
+        <macro ref="vas_th_cluster05_macro" connection="galaxy"/>
+      </connection>
+      <connection name="vas_th_cluster06_connection" ref="clusters">
+        <offset><position x="20000000" y="0" z="20000000"/></offset>
+        <macro ref="vas_th_cluster06_macro" connection="galaxy"/>
+      </connection>
+      <connection name="vas_th_cluster07_connection" ref="clusters">
+        <offset><position x="40000000" y="0" z="20000000"/></offset>
+        <macro ref="vas_th_cluster07_macro" connection="galaxy"/>
+      </connection>
+      <connection name="vas_th_cluster08_connection" ref="clusters">
+        <offset><position x="60000000" y="0" z="20000000"/></offset>
+        <macro ref="vas_th_cluster08_macro" connection="galaxy"/>
+      </connection>
+      <connection name="vas_th_cluster09_connection" ref="clusters">
+        <offset><position x="0"        y="0" z="40000000"/></offset>
+        <macro ref="vas_th_cluster09_macro" connection="galaxy"/>
+      </connection>
+      <connection name="vas_th_cluster10_connection" ref="clusters">
+        <offset><position x="20000000" y="0" z="40000000"/></offset>
+        <macro ref="vas_th_cluster10_macro" connection="galaxy"/>
+      </connection>
+      <connection name="vas_th_cluster11_connection" ref="clusters">
+        <offset><position x="40000000" y="0" z="40000000"/></offset>
+        <macro ref="vas_th_cluster11_macro" connection="galaxy"/>
+      </connection>
+      <connection name="vas_th_cluster12_connection" ref="clusters">
+        <offset><position x="60000000" y="0" z="40000000"/></offset>
+        <macro ref="vas_th_cluster12_macro" connection="galaxy"/>
+      </connection>
+      <connection name="vas_th_cluster13_connection" ref="clusters">
+        <offset><position x="0"        y="0" z="60000000"/></offset>
+        <macro ref="vas_th_cluster13_macro" connection="galaxy"/>
+      </connection>
+      <connection name="vas_th_cluster14_connection" ref="clusters">
+        <offset><position x="20000000" y="0" z="60000000"/></offset>
+        <macro ref="vas_th_cluster14_macro" connection="galaxy"/>
+      </connection>
+      <connection name="vas_th_cluster15_connection" ref="clusters">
+        <offset><position x="40000000" y="0" z="60000000"/></offset>
+        <macro ref="vas_th_cluster15_macro" connection="galaxy"/>
+      </connection>
+      <connection name="vas_th_cluster16_connection" ref="clusters">
+        <offset><position x="60000000" y="0" z="60000000"/></offset>
+        <macro ref="vas_th_cluster16_macro" connection="galaxy"/>
+      </connection>
+      <connection name="vas_th_cluster17_connection" ref="clusters">
+        <offset><position x="0"        y="0" z="80000000"/></offset>
+        <macro ref="vas_th_cluster17_macro" connection="galaxy"/>
+      </connection>
+      <connection name="vas_th_cluster18_connection" ref="clusters">
+        <offset><position x="20000000" y="0" z="80000000"/></offset>
+        <macro ref="vas_th_cluster18_macro" connection="galaxy"/>
+      </connection>
+      <connection name="vas_th_cluster19_connection" ref="clusters">
+        <offset><position x="40000000" y="0" z="80000000"/></offset>
+        <macro ref="vas_th_cluster19_macro" connection="galaxy"/>
+      </connection>
+      <connection name="vas_th_cluster20_connection" ref="clusters">
+        <offset><position x="60000000" y="0" z="80000000"/></offset>
+        <macro ref="vas_th_cluster20_macro" connection="galaxy"/>
+      </connection>
+      <connection name="vas_th_cluster21_connection" ref="clusters">
+        <offset><position x="0"        y="0" z="100000000"/></offset>
+        <macro ref="vas_th_cluster21_macro" connection="galaxy"/>
+      </connection>
+      <connection name="vas_th_cluster22_connection" ref="clusters">
+        <offset><position x="20000000" y="0" z="100000000"/></offset>
+        <macro ref="vas_th_cluster22_macro" connection="galaxy"/>
+      </connection>
+      <connection name="vas_th_cluster23_connection" ref="clusters">
+        <offset><position x="40000000" y="0" z="100000000"/></offset>
+        <macro ref="vas_th_cluster23_macro" connection="galaxy"/>
+      </connection>
+      <connection name="vas_th_cluster24_connection" ref="clusters">
+        <offset><position x="60000000" y="0" z="100000000"/></offset>
+        <macro ref="vas_th_cluster24_macro" connection="galaxy"/>
+      </connection>
+      <connection name="vas_th_cluster25_connection" ref="clusters">
+        <offset><position x="0"        y="0" z="120000000"/></offset>
+        <macro ref="vas_th_cluster25_macro" connection="galaxy"/>
+      </connection>
+      <connection name="vas_th_cluster26_connection" ref="clusters">
+        <offset><position x="20000000" y="0" z="120000000"/></offset>
+        <macro ref="vas_th_cluster26_macro" connection="galaxy"/>
+      </connection>
+      <connection name="vas_th_cluster27_connection" ref="clusters">
+        <offset><position x="40000000" y="0" z="120000000"/></offset>
+        <macro ref="vas_th_cluster27_macro" connection="galaxy"/>
+      </connection>
+
+      <connection name="vas_th_gate10_to_11_destination" ref="destination" path="../vas_th_cluster10_connection/vas_th_cluster10_sector_connection/vas_th_s10_gate_zone_connection/connection_vas_th_pursuit_gate_origin_to_dest">
+        <macro connection="destination" path="../../../../../vas_th_cluster11_connection/vas_th_cluster11_sector_connection/vas_th_s11_gate_zone_connection/connection_vas_th_pursuit_gate_dest_to_origin"/>
+      </connection>
+      <connection name="vas_th_gate11_to_10_destination" ref="destination" path="../vas_th_cluster11_connection/vas_th_cluster11_sector_connection/vas_th_s11_gate_zone_connection/connection_vas_th_pursuit_gate_dest_to_origin">
+        <macro connection="destination" path="../../../../../vas_th_cluster10_connection/vas_th_cluster10_sector_connection/vas_th_s10_gate_zone_connection/connection_vas_th_pursuit_gate_origin_to_dest"/>
+      </connection>
+      <connection name="vas_th_gate14_to_15_destination" ref="destination" path="../vas_th_cluster14_connection/vas_th_cluster14_sector_connection/vas_th_s14_gate_zone_connection/connection_vas_th_pursuit_player_gate_origin_to_dest">
+        <macro connection="destination" path="../../../../../vas_th_cluster15_connection/vas_th_cluster15_sector_connection/vas_th_s15_gate_zone_connection/connection_vas_th_pursuit_player_gate_dest_to_origin"/>
+      </connection>
+      <connection name="vas_th_gate15_to_14_destination" ref="destination" path="../vas_th_cluster15_connection/vas_th_cluster15_sector_connection/vas_th_s15_gate_zone_connection/connection_vas_th_pursuit_player_gate_dest_to_origin">
+        <macro connection="destination" path="../../../../../vas_th_cluster14_connection/vas_th_cluster14_sector_connection/vas_th_s14_gate_zone_connection/connection_vas_th_pursuit_player_gate_origin_to_dest"/>
+      </connection>
+      <connection name="vas_th_gate23_to_24_destination" ref="destination" path="../vas_th_cluster23_connection/vas_th_cluster23_sector_connection/vas_th_s23_movegeneric_gate_zone_connection/connection_vas_th_pursuit_movegeneric_gate_origin_to_dest">
+        <macro connection="destination" path="../../../../../vas_th_cluster24_connection/vas_th_cluster24_sector_connection/vas_th_s24_movegeneric_gate_zone_connection/connection_vas_th_pursuit_movegeneric_gate_dest_to_origin"/>
+      </connection>
+      <connection name="vas_th_gate24_to_23_destination" ref="destination" path="../vas_th_cluster24_connection/vas_th_cluster24_sector_connection/vas_th_s24_movegeneric_gate_zone_connection/connection_vas_th_pursuit_movegeneric_gate_dest_to_origin">
+        <macro connection="destination" path="../../../../../vas_th_cluster23_connection/vas_th_cluster23_sector_connection/vas_th_s23_movegeneric_gate_zone_connection/connection_vas_th_pursuit_movegeneric_gate_origin_to_dest"/>
+      </connection>
+      <connection name="vas_th_gate26_to_27_destination" ref="destination" path="../vas_th_cluster26_connection/vas_th_cluster26_sector_connection/vas_th_s26_hidden_vff_scan_zone_connection/connection_vas_th_hidden_vff_scan_to_commander">
+        <macro connection="destination" path="../../../../../vas_th_cluster27_connection/vas_th_cluster27_sector_connection/vas_th_s27_hidden_vff_commander_zone_connection/connection_vas_th_hidden_vff_commander_to_scan"/>
+      </connection>
+      <connection name="vas_th_gate27_to_26_destination" ref="destination" path="../vas_th_cluster27_connection/vas_th_cluster27_sector_connection/vas_th_s27_hidden_vff_commander_zone_connection/connection_vas_th_hidden_vff_commander_to_scan">
+        <macro connection="destination" path="../../../../../vas_th_cluster26_connection/vas_th_cluster26_sector_connection/vas_th_s26_hidden_vff_scan_zone_connection/connection_vas_th_hidden_vff_scan_to_commander"/>
+      </connection>
+    </connections>
+  </macro>
+</macros>

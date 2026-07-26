@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<macros>
+  <macro name="vas_th_local_highway_sector09_macro" class="highway">
+    <component ref="standardzonehighway"/>
+    <connections>
+      <connection ref="entrypoint">
+        <offset><position x="10000" y="0" z="1000"/></offset>
+      </connection>
+      <connection ref="exitpoint">
+        <offset><position x="310000" y="0" z="1000"/></offset>
+      </connection>
+    </connections>
+    <properties>
+      <boundaries>
+        <boundary class="splinetube">
+          <splineposition x="10000" y="0" z="1000" tx="1" ty="0" tz="0" weight="0" inlength="0" outlength="100000"/>
+          <splineposition x="160000" y="0" z="1000" tx="1" ty="0" tz="0" weight="1" inlength="100000" outlength="100000"/>
+          <splineposition x="310000" y="0" z="1000" tx="1" ty="0" tz="0" weight="0" inlength="100000" outlength="0"/>
+          <size r="200"/>
+        </boundary>
+      </boundaries>
+      <controls>
+        <linear>
+          <time/>
+        </linear>
+        <angular>
+          <roll/>
+        </angular>
+      </controls>
+      <configuration ring="0"/>
+    </properties>
+  </macro>
+
+  <macro name="vas_th_local_highway_sector13_macro" class="highway">
+    <component ref="standardzonehighway"/>
+    <connections>
+      <connection ref="entrypoint">
+        <offset><position x="10000" y="0" z="1000"/></offset>
+      </connection>
+      <connection ref="exitpoint">
+        <offset><position x="310000" y="0" z="1000"/></offset>
+      </connection>
+    </connections>
+    <properties>
+      <boundaries>
+        <boundary class="splinetube">
+          <splineposition x="10000" y="0" z="1000" tx="1" ty="0" tz="0" weight="0" inlength="0" outlength="100000"/>
+          <splineposition x="160000" y="0" z="1000" tx="1" ty="0" tz="0" weight="1" inlength="100000" outlength="100000"/>
+          <splineposition x="310000" y="0" z="1000" tx="1" ty="0" tz="0" weight="0" inlength="100000" outlength="0"/>
+          <size r="200"/>
+        </boundary>
+      </boundaries>
+      <controls>
+        <linear>
+          <time/>
+        </linear>
+        <angular>
+          <roll/>
+        </angular>
+      </controls>
+      <configuration ring="0"/>
+    </properties>
+  </macro>
+</macros>

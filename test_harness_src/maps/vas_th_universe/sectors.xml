@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  25 test sectors. Zone macro names keep their original "C##" scenario tags from the
+  vanilla-patch version of this harness (so jobs.xml / md keep working unchanged); the
+  C## no longer refers to a vanilla cluster, it is just a stable scenario id.
+
+  Per-sector layout (zone offsets within the sector):
+    s01 ARG vs TER Military         : Home(0,0,0)  ArgonForce(+300,-150)  TerranForce(+300,+150)
+    s02 ARG vs TER Defence Stations : ArgonForce(+300,-150)  TerranStations(+300,+150)   [MD stations]
+    s03 ARG vs TER Civil Ships      : ArgonForce(+300,-150)  TerranCivil(+300,+150)
+    s04 ARG vs TER Civil Stations   : ArgonForce(+300,-150)  TerranStation(+300,+150)    [MD station]
+    s05 Player vs PAR Defence Stations: PlayerForce(+300,-150) ParanidStation(+300,+150) [MD station]
+    s06 Player vs PAR Civil Stations  : PlayerForce(+300,-150) ParanidStation(+300,+150) [MD station]
+    s07 Player vs PAR Military      : PlayerForce(+300,-150) ParanidMil(+300,+150)
+    s08 Player vs PAR Civil Ships   : PlayerForce(+300,-150) ParanidCivil(+300,+150)
+    s09 Highway Pursuit  : one 300 km local highway
+    s10 Gate Pursuit A   : origin-side gate
+    s11 Gate Pursuit B   : destination-side gate
+    s12 Distance Pursuit : one wide empty zone
+    s13 Player Highway Pursuit  : one 300 km local highway
+    s14 Player Gate Pursuit A   : origin-side gate
+    s15 Player Gate Pursuit B   : destination-side gate
+    s16 Player Distance Pursuit : one wide empty zone
+    s17 Direct TER/ARG Size Pursuit    : one wide empty zone
+    s18 Direct Player/PAR Size Pursuit : one wide empty zone
+    s19 Active Fight Pursuit           : one wide empty zone
+    s20 Targeting Friendly Bystander   : one compact zone
+    s21 Targeting VFF Secondary        : one compact zone
+    s22 Targeting Civilian Secondary Scan: one compact zone
+    s23 MoveGeneric Gate Pursuit A     : origin-side gate
+    s24 MoveGeneric Gate Pursuit B     : destination-side gate
+    s25 Station Route Waypointing      : one wide station/ship zone
+    s26 Hidden VFF Commander A         : visible subordinate + scanner
+    s27 Hidden VFF Commander B         : unseen commander
+  (offsets in metres; force zones are 300 km apart so spawns do not overlap)
+-->
+<macros xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+  <!-- s01 ARG vs TER Military (+ player home) -->
+  <macro name="vas_th_sector01_macro" class="sector">
+    <component ref="standardsector"/>
+    <connections>
+      <connection name="vas_th_s01_home_connection" ref="zones">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="zone_vas_th_s01_home_macro" connection="sector"/>
+      </connection>
+      <connection name="vas_th_s01_argon_connection" ref="zones">
+        <offset><position x="300000" y="0" z="-150000"/></offset>
+        <macro ref="zone_vas_th_s01_argonforce_macro" connection="sector"/>
+      </connection>
+      <connection name="vas_th_s01_terran_connection" ref="zones">
+        <offset><position x="300000" y="0" z="150000"/></offset>
+        <macro ref="zone_vas_th_s01_terranforce_macro" connection="sector"/>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s02 ARG vs TER Defence Stations -->
+  <macro name="vas_th_sector02_macro" class="sector">
+    <component ref="standardsector"/>
+    <connections>
+      <connection name="vas_th_s02_argon_connection" ref="zones">
+        <offset><position x="300000" y="0" z="-150000"/></offset>
+        <macro ref="zone_vas_th_s02_argonforce_macro" connection="sector"/>
+      </connection>
+      <connection name="vas_th_s02_terranstations_connection" ref="zones">
+        <offset><position x="300000" y="0" z="150000"/></offset>
+        <macro ref="zone_vas_th_s02_terranstation_macro" connection="sector"/>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s03 ARG vs TER Civil Ships -->
+  <macro name="vas_th_sector03_macro" class="sector">
+    <component ref="standardsector"/>
+    <connections>
+      <connection name="vas_th_s03_argon_connection" ref="zones">
+        <offset><position x="300000" y="0" z="-150000"/></offset>
+        <macro ref="zone_vas_th_s03_argonforce_macro" connection="sector"/>
+      </connection>
+      <connection name="vas_th_s03_terrancivil_connection" ref="zones">
+        <offset><position x="300000" y="0" z="150000"/></offset>
+        <macro ref="zone_vas_th_s03_terrancivil_macro" connection="sector"/>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s04 ARG vs TER Civil Stations -->
+  <macro name="vas_th_sector04_macro" class="sector">
+    <component ref="standardsector"/>
+    <connections>
+      <connection name="vas_th_s04_argon_connection" ref="zones">
+        <offset><position x="300000" y="0" z="-150000"/></offset>
+        <macro ref="zone_vas_th_s04_argonforce_macro" connection="sector"/>
+      </connection>
+      <connection name="vas_th_s04_terranstation_connection" ref="zones">
+        <offset><position x="300000" y="0" z="150000"/></offset>
+        <macro ref="zone_vas_th_s04_terranstation_macro" connection="sector"/>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s05 Player vs PAR Defence Stations -->
+  <macro name="vas_th_sector05_macro" class="sector">
+    <component ref="standardsector"/>
+    <connections>
+      <connection name="vas_th_s05_player_connection" ref="zones">
+        <offset><position x="300000" y="0" z="-150000"/></offset>
+        <macro ref="zone_vas_th_s05_playerforce_macro" connection="sector"/>
+      </connection>
+      <connection name="vas_th_s05_paranidstation_connection" ref="zones">
+        <offset><position x="300000" y="0" z="150000"/></offset>
+        <macro ref="zone_vas_th_s05_paranidstation_macro" connection="sector"/>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s06 Player vs PAR Civil Stations -->
+  <macro name="vas_th_sector06_macro" class="sector">
+    <component ref="standardsector"/>
+    <connections>
+      <connection name="vas_th_s06_player_connection" ref="zones">
+        <offset><position x="300000" y="0" z="-150000"/></offset>
+        <macro ref="zone_vas_th_s06_playerforce_macro" connection="sector"/>
+      </connection>
+      <connection name="vas_th_s06_paranidstation_connection" ref="zones">
+        <offset><position x="300000" y="0" z="150000"/></offset>
+        <macro ref="zone_vas_th_s06_paranidstation_macro" connection="sector"/>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s07 Player vs PAR Military -->
+  <macro name="vas_th_sector07_macro" class="sector">
+    <component ref="standardsector"/>
+    <connections>
+      <connection name="vas_th_s07_player_connection" ref="zones">
+        <offset><position x="300000" y="0" z="-150000"/></offset>
+        <macro ref="zone_vas_th_s07_playerforce_macro" connection="sector"/>
+      </connection>
+      <connection name="vas_th_s07_paranidmil_connection" ref="zones">
+        <offset><position x="300000" y="0" z="150000"/></offset>
+        <macro ref="zone_vas_th_s07_paranidmil_macro" connection="sector"/>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s08 Player vs PAR Civil Ships -->
+  <macro name="vas_th_sector08_macro" class="sector">
+    <component ref="standardsector"/>
+    <connections>
+      <connection name="vas_th_s08_player_connection" ref="zones">
+        <offset><position x="300000" y="0" z="-150000"/></offset>
+        <macro ref="zone_vas_th_s08_playerforce_macro" connection="sector"/>
+      </connection>
+      <connection name="vas_th_s08_paranidcivil_connection" ref="zones">
+        <offset><position x="300000" y="0" z="150000"/></offset>
+        <macro ref="zone_vas_th_s08_paranidcivil_macro" connection="sector"/>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s09 Highway Pursuit: one 300 km local highway for pursuit-through-highway checks -->
+  <macro name="vas_th_sector09_macro" class="sector">
+    <component ref="standardsector"/>
+    <connections>
+      <connection name="vas_th_s09_highway_zone_connection" ref="zones">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="zone_vas_th_pursuit_highway_macro" connection="sector"/>
+      </connection>
+      <connection name="vas_th_s09_highway_exit_zone_connection" ref="zones">
+        <offset><position x="310000" y="0" z="0"/></offset>
+        <macro ref="zone_vas_th_pursuit_highway_exit_macro" connection="sector"/>
+      </connection>
+      <connection name="vas_th_s09_highway_connection" ref="zonehighways">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="vas_th_local_highway_sector09_macro" connection="sector">
+          <connections>
+            <connection ref="entrypoint">
+              <macro path="../../vas_th_s09_highway_zone_connection" connection="vas_th_pursuit_highway_entry_gate"/>
+            </connection>
+            <connection ref="exitpoint">
+              <macro path="../../vas_th_s09_highway_exit_zone_connection" connection="vas_th_pursuit_highway_exit_gate"/>
+            </connection>
+          </connections>
+        </macro>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s10 Gate Pursuit A: origin sector with one gate to s11 -->
+  <macro name="vas_th_sector10_macro" class="sector">
+    <component ref="standardsector"/>
+    <connections>
+      <connection name="vas_th_s10_gate_zone_connection" ref="zones">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="zone_vas_th_pursuit_gate_origin_macro" connection="sector"/>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s11 Gate Pursuit B: destination sector, intentionally ship-empty -->
+  <macro name="vas_th_sector11_macro" class="sector">
+    <component ref="standardsector"/>
+    <connections>
+      <connection name="vas_th_s11_gate_zone_connection" ref="zones">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="zone_vas_th_pursuit_gate_dest_macro" connection="sector"/>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s12 Distance Pursuit: one wide zone for the 700 km initial separation test -->
+  <macro name="vas_th_sector12_macro" class="sector">
+    <component ref="standardsector"/>
+    <connections>
+      <connection name="vas_th_s12_distance_zone_connection" ref="zones">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="zone_vas_th_pursuit_distance_macro" connection="sector"/>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s13 Player/Paranid Highway Pursuit: one 300 km local highway -->
+  <macro name="vas_th_sector13_macro" class="sector">
+    <component ref="standardsector"/>
+    <connections>
+      <connection name="vas_th_s13_highway_zone_connection" ref="zones">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="zone_vas_th_pursuit_player_highway_macro" connection="sector"/>
+      </connection>
+      <connection name="vas_th_s13_highway_exit_zone_connection" ref="zones">
+        <offset><position x="310000" y="0" z="0"/></offset>
+        <macro ref="zone_vas_th_pursuit_player_highway_exit_macro" connection="sector"/>
+      </connection>
+      <connection name="vas_th_s13_highway_connection" ref="zonehighways">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="vas_th_local_highway_sector13_macro" connection="sector">
+          <connections>
+            <connection ref="entrypoint">
+              <macro path="../../vas_th_s13_highway_zone_connection" connection="vas_th_pursuit_player_highway_entry_gate"/>
+            </connection>
+            <connection ref="exitpoint">
+              <macro path="../../vas_th_s13_highway_exit_zone_connection" connection="vas_th_pursuit_player_highway_exit_gate"/>
+            </connection>
+          </connections>
+        </macro>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s14 Player/Paranid Gate Pursuit A: origin sector with one gate to s15 -->
+  <macro name="vas_th_sector14_macro" class="sector">
+    <component ref="standardsector"/>
+    <connections>
+      <connection name="vas_th_s14_gate_zone_connection" ref="zones">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="zone_vas_th_pursuit_player_gate_origin_macro" connection="sector"/>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s15 Player/Paranid Gate Pursuit B: destination sector, intentionally ship-empty -->
+  <macro name="vas_th_sector15_macro" class="sector">
+    <component ref="standardsector"/>
+    <connections>
+      <connection name="vas_th_s15_gate_zone_connection" ref="zones">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="zone_vas_th_pursuit_player_gate_dest_macro" connection="sector"/>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s16 Player/Paranid Distance Pursuit: one wide zone for the 700 km initial separation test -->
+  <macro name="vas_th_sector16_macro" class="sector">
+    <component ref="standardsector"/>
+    <connections>
+      <connection name="vas_th_s16_distance_zone_connection" ref="zones">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="zone_vas_th_pursuit_player_distance_macro" connection="sector"/>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s17 Direct TER/ARG Size Pursuit: direct Attack orders, no scanner/bravery path -->
+  <macro name="vas_th_sector17_macro" class="sector">
+    <component ref="standardsector"/>
+    <connections>
+      <connection name="vas_th_s17_direct_ter_arg_zone_connection" ref="zones">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="zone_vas_th_pursuit_direct_ter_arg_macro" connection="sector"/>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s18 Direct Player/PAR Size Pursuit: direct Attack orders, no scanner/bravery path -->
+  <macro name="vas_th_sector18_macro" class="sector">
+    <component ref="standardsector"/>
+    <connections>
+      <connection name="vas_th_s18_direct_player_par_zone_connection" ref="zones">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="zone_vas_th_pursuit_direct_player_par_macro" connection="sector"/>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s19 Active Fight Pursuit: equal patrol ships meet near center after a long approach -->
+  <macro name="vas_th_sector19_macro" class="sector">
+    <component ref="standardsector"/>
+    <connections>
+      <connection name="vas_th_s19_active_fight_zone_connection" ref="zones">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="zone_vas_th_pursuit_active_fight_macro" connection="sector"/>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s20 Targeting: TER patrol, ARG primary target, friendly player bystander -->
+  <macro name="vas_th_sector20_macro" class="sector">
+    <component ref="standardsector"/>
+    <connections>
+      <connection name="vas_th_s20_targeting_friendly_zone_connection" ref="zones">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="zone_vas_th_targeting_friendly_macro" connection="sector"/>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s21 Targeting: TER patrol vs ARG VFF scout group -->
+  <macro name="vas_th_sector21_macro" class="sector">
+    <component ref="standardsector"/>
+    <connections>
+      <connection name="vas_th_s21_targeting_vff_arg_zone_connection" ref="zones">
+        <offset><position x="5000" y="0" z="0"/></offset>
+        <macro ref="zone_vas_th_targeting_vff_arg_macro" connection="sector"/>
+      </connection>
+      <connection name="vas_th_s21_targeting_vff_ter_zone_connection" ref="zones">
+        <offset><position x="-100000" y="0" z="0"/></offset>
+        <macro ref="zone_vas_th_targeting_vff_ter_macro" connection="sector"/>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s22 Targeting: TER patrol vs closer ARG civilian miners plus farther ARG military scout -->
+  <macro name="vas_th_sector22_macro" class="sector">
+    <component ref="standardsector"/>
+    <connections>
+      <connection name="vas_th_s22_targeting_civilian_scan_zone_connection" ref="zones">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="zone_vas_th_targeting_civilian_scan_macro" connection="sector"/>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s23 MoveGeneric Gate Pursuit A: origin sector with one gate to s24 -->
+  <macro name="vas_th_sector23_macro" class="sector">
+    <component ref="standardsector"/>
+    <connections>
+      <connection name="vas_th_s23_movegeneric_gate_zone_connection" ref="zones">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="zone_vas_th_pursuit_movegeneric_gate_origin_macro" connection="sector"/>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s24 MoveGeneric Gate Pursuit B: destination sector, intentionally ship-empty -->
+  <macro name="vas_th_sector24_macro" class="sector">
+    <component ref="standardsector"/>
+    <connections>
+      <connection name="vas_th_s24_movegeneric_gate_zone_connection" ref="zones">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="zone_vas_th_pursuit_movegeneric_gate_dest_macro" connection="sector"/>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s25 Station Route Waypointing: solo patrol joins a larger attack through station blockers -->
+  <macro name="vas_th_sector25_macro" class="sector">
+    <component ref="standardsector"/>
+    <connections>
+      <connection name="vas_th_s25_station_waypoint_zone_connection" ref="zones">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="zone_vas_th_station_waypoint_macro" connection="sector"/>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s26 Hidden VFF Commander A: scanner sees subordinate, not its commander -->
+  <macro name="vas_th_sector26_macro" class="sector">
+    <component ref="standardsector"/>
+    <connections>
+      <connection name="vas_th_s26_hidden_vff_scan_zone_connection" ref="zones">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="zone_vas_th_hidden_vff_scan_macro" connection="sector"/>
+      </connection>
+    </connections>
+  </macro>
+
+  <!-- s27 Hidden VFF Commander B: out-of-sector commander only -->
+  <macro name="vas_th_sector27_macro" class="sector">
+    <component ref="standardsector"/>
+    <connections>
+      <connection name="vas_th_s27_hidden_vff_commander_zone_connection" ref="zones">
+        <offset><position x="0" y="0" z="0"/></offset>
+        <macro ref="zone_vas_th_hidden_vff_commander_macro" connection="sector"/>
+      </connection>
+    </connections>
+  </macro>
+
+</macros>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<diff>
+  <add sel="//deployable/macros">
+    <macro category="satellite" mk="0" macro="vas_th_satellite_800km_macro"/>
+  </add>
+</diff>

@@ -1,0 +1,1149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<diff xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="diff.xsd">
+  <add sel="/jobs">
+    <gamestart ref="vas_epai_th_gamestart">
+
+    <!-- ============================================================ -->
+    <!-- ARGON subordinate tree (shared by all Argon roots)           -->
+    <!-- ============================================================ -->
+
+    <!-- Carrier branch: M escort (4 per carrier), each with 4 S -->
+    <job id="vas_th_arg_carrier_m" name="{2026062301,1002}" startactive="false">
+      <orders>
+        <order order="Escort" default="true">
+          <param name="formation" value="formationshape.xshapeforward"/>
+          <param name="overrideformationskill" value="true"/>
+        </order>
+      </orders>
+      <category faction="argon" tags="[military]" size="ship_m"/>
+      <quota wing="4"/>
+      <location class="galaxy" macro="vas_th_galaxy_macro"/>
+      <environment buildatshipyard="true"/>
+      <modifiers subordinate="true"/>
+      <ship>
+        <select faction="argon" tags="[military]" size="ship_m"/>
+        <loadout>
+          <quantity exact="1.0"/>
+          <quality exact="0.9"><variation exact="0.6"/></quality>
+        </loadout>
+        <owner exact="argon" overridenpc="true"/>
+      </ship>
+      <subordinates>
+        <subordinate job="vas_th_arg_carrier_m_s" assignment="attack"/>
+      </subordinates>
+    </job>
+    <job id="vas_th_arg_carrier_m_s" name="{2026062301,1003}" startactive="false">
+      <orders>
+        <order order="Escort" default="true">
+          <param name="formation" value="formationshape.xshapeforward"/>
+          <param name="overrideformationskill" value="true"/>
+        </order>
+      </orders>
+      <category faction="argon" tags="[military]" size="ship_s"/>
+      <quota wing="4"/>
+      <location class="galaxy" macro="vas_th_galaxy_macro"/>
+      <environment buildatshipyard="true"/>
+      <modifiers subordinate="true"/>
+      <ship>
+        <select faction="argon" tags="[military]" size="ship_s"/>
+        <loadout>
+          <quantity exact="1.0"/>
+          <quality exact="0.9"><variation exact="0.6"/></quality>
+        </loadout>
+        <owner exact="argon" overridenpc="true"/>
+      </ship>
+    </job>
+
+    <!-- Carrier branch: 12 S escorts directly under the carrier -->
+    <job id="vas_th_arg_carrier_s" name="{2026062301,1003}" startactive="false">
+      <orders>
+        <order order="Escort" default="true">
+          <param name="formation" value="formationshape.xshapeforward"/>
+          <param name="overrideformationskill" value="true"/>
+        </order>
+      </orders>
+      <category faction="argon" tags="[military]" size="ship_s"/>
+      <quota wing="12"/>
+      <location class="galaxy" macro="vas_th_galaxy_macro"/>
+      <environment buildatshipyard="true"/>
+      <modifiers subordinate="true"/>
+      <ship>
+        <select faction="argon" tags="[military]" size="ship_s"/>
+        <loadout>
+          <quantity exact="1.0"/>
+          <quality exact="0.9"><variation exact="0.6"/></quality>
+        </loadout>
+        <owner exact="argon" overridenpc="true"/>
+      </ship>
+    </job>
+
+    <!-- Destroyer branch: S escort (2 per M) -->
+    <job id="vas_th_arg_dest_m_s" name="{2026062301,1006}" startactive="false">
+      <orders>
+        <order order="Escort" default="true">
+          <param name="formation" value="formationshape.xshapeforward"/>
+          <param name="overrideformationskill" value="true"/>
+        </order>
+      </orders>
+      <category faction="argon" tags="[military]" size="ship_s"/>
+      <quota wing="2"/>
+      <location class="galaxy" macro="vas_th_galaxy_macro"/>
+      <environment buildatshipyard="true"/>
+      <modifiers subordinate="true"/>
+      <ship>
+        <select faction="argon" tags="[military]" size="ship_s"/>
+        <loadout>
+          <quantity exact="1.0"/>
+          <quality exact="0.9"><variation exact="0.6"/></quality>
+        </loadout>
+        <owner exact="argon" overridenpc="true"/>
+      </ship>
+    </job>
+    <!-- Destroyer branch: M escort (1 per destroyer / per sub-destroyer), each with 2 S. Reused by both. -->
+    <job id="vas_th_arg_dest_m" name="{2026062301,1005}" startactive="false">
+      <orders>
+        <order order="Escort" default="true">
+          <param name="formation" value="formationshape.xshapeforward"/>
+          <param name="overrideformationskill" value="true"/>
+        </order>
+      </orders>
+      <category faction="argon" tags="[military]" size="ship_m"/>
+      <quota wing="1"/>
+      <location class="galaxy" macro="vas_th_galaxy_macro"/>
+      <environment buildatshipyard="true"/>
+      <modifiers subordinate="true"/>
+      <ship>
+        <select faction="argon" tags="[military]" size="ship_m"/>
+        <loadout>
+          <quantity exact="1.0"/>
+          <quality exact="0.9"><variation exact="0.6"/></quality>
+        </loadout>
+        <owner exact="argon" overridenpc="true"/>
+      </ship>
+      <subordinates>
+        <subordinate job="vas_th_arg_dest_m_s" assignment="attack"/>
+      </subordinates>
+    </job>
+    <!-- Destroyer branch: sub-destroyer (2 per top destroyer), each with 1 M escort -->
+    <job id="vas_th_arg_destroyer_sub" name="{2026062301,1004}" startactive="false">
+      <orders>
+        <order order="Escort" default="true">
+          <param name="formation" value="formationshape.xshapeforward"/>
+          <param name="overrideformationskill" value="true"/>
+        </order>
+      </orders>
+      <category faction="argon" tags="[military, destroyer]" size="ship_l"/>
+      <quota wing="2"/>
+      <location class="galaxy" macro="vas_th_galaxy_macro"/>
+      <environment buildatshipyard="true"/>
+      <modifiers subordinate="true"/>
+      <ship>
+        <select faction="argon" tags="[military, destroyer]" size="ship_l"/>
+        <loadout>
+          <quantity exact="1.0"/>
+          <quality exact="0.9"><variation exact="0.6"/></quality>
+        </loadout>
+        <owner exact="argon" overridenpc="true"/>
+      </ship>
+      <subordinates>
+        <subordinate job="vas_th_arg_dest_m" assignment="attack"/>
+      </subordinates>
+    </job>
+
+    <!-- ============================================================ -->
+    <!-- TERRAN subordinate tree (shared by all Terran roots)         -->
+    <!-- ============================================================ -->
+
+    <job id="vas_th_ter_carrier_m" name="{2026062301,1102}" startactive="false">
+      <orders>
+        <order order="Escort" default="true">
+          <param name="formation" value="formationshape.xshapeforward"/>
+          <param name="overrideformationskill" value="true"/>
+        </order>
+      </orders>
+      <category faction="terran" tags="[military]" size="ship_m"/>
+      <quota wing="4"/>
+      <location class="galaxy" macro="vas_th_galaxy_macro"/>
+      <environment buildatshipyard="true"/>
+      <modifiers subordinate="true"/>
+      <ship>
+        <select faction="terran" tags="[military]" size="ship_m"/>
+        <loadout>
+          <quantity exact="1.0"/>
+          <quality exact="0.9"><variation exact="0.6"/></quality>
+        </loadout>
+        <owner exact="terran" overridenpc="true"/>
+      </ship>
+      <subordinates>
+        <subordinate job="vas_th_ter_carrier_m_s" assignment="attack"/>
+      </subordinates>
+    </job>
+    <job id="vas_th_ter_carrier_m_s" name="{2026062301,1103}" startactive="false">
+      <orders>
+        <order order="Escort" default="true">
+          <param name="formation" value="formationshape.xshapeforward"/>
+          <param name="overrideformationskill" value="true"/>
+        </order>
+      </orders>
+      <category faction="terran" tags="[military]" size="ship_s"/>
+      <quota wing="4"/>
+      <location class="galaxy" macro="vas_th_galaxy_macro"/>
+      <environment buildatshipyard="true"/>
+      <modifiers subordinate="true"/>
+      <ship>
+        <select faction="terran" tags="[military]" size="ship_s"/>
+        <loadout>
+          <quantity exact="1.0"/>
+          <quality exact="0.9"><variation exact="0.6"/></quality>
+        </loadout>
+        <owner exact="terran" overridenpc="true"/>
+      </ship>
+    </job>
+    <job id="vas_th_ter_carrier_s" name="{2026062301,1103}" startactive="false">
+      <orders>
+        <order order="Escort" default="true">
+          <param name="formation" value="formationshape.xshapeforward"/>
+          <param name="overrideformationskill" value="true"/>
+        </order>
+      </orders>
+      <category faction="terran" tags="[military]" size="ship_s"/>
+      <quota wing="12"/>
+      <location class="galaxy" macro="vas_th_galaxy_macro"/>
+      <environment buildatshipyard="true"/>
+      <modifiers subordinate="true"/>
+      <ship>
+        <select faction="terran" tags="[military]" size="ship_s"/>
+        <loadout>
+          <quantity exact="1.0"/>
+          <quality exact="0.9"><variation exact="0.6"/></quality>
+        </loadout>
+        <owner exact="terran" overridenpc="true"/>
+      </ship>
+    </job>
+    <job id="vas_th_ter_dest_m_s" name="{2026062301,1106}" startactive="false">
+      <orders>
+        <order order="Escort" default="true">
+          <param name="formation" value="formationshape.xshapeforward"/>
+          <param name="overrideformationskill" value="true"/>
+        </order>
+      </orders>
+      <category faction="terran" tags="[military]" size="ship_s"/>
+      <quota wing="2"/>
+      <location class="galaxy" macro="vas_th_galaxy_macro"/>
+      <environment buildatshipyard="true"/>
+      <modifiers subordinate="true"/>
+      <ship>
+        <select faction="terran" tags="[military]" size="ship_s"/>
+        <loadout>
+          <quantity exact="1.0"/>
+          <quality exact="0.9"><variation exact="0.6"/></quality>
+        </loadout>
+        <owner exact="terran" overridenpc="true"/>
+      </ship>
+    </job>
+    <job id="vas_th_ter_dest_m" name="{2026062301,1105}" startactive="false">
+      <orders>
+        <order order="Escort" default="true">
+          <param name="formation" value="formationshape.xshapeforward"/>
+          <param name="overrideformationskill" value="true"/>
+        </order>
+      </orders>
+      <category faction="terran" tags="[military]" size="ship_m"/>
+      <quota wing="1"/>
+      <location class="galaxy" macro="vas_th_galaxy_macro"/>
+      <environment buildatshipyard="true"/>
+      <modifiers subordinate="true"/>
+      <ship>
+        <select faction="terran" tags="[military]" size="ship_m"/>
+        <loadout>
+          <quantity exact="1.0"/>
+          <quality exact="0.9"><variation exact="0.6"/></quality>
+        </loadout>
+        <owner exact="terran" overridenpc="true"/>
+      </ship>
+      <subordinates>
+        <subordinate job="vas_th_ter_dest_m_s" assignment="attack"/>
+      </subordinates>
+    </job>
+    <job id="vas_th_ter_destroyer_sub" name="{2026062301,1104}" startactive="false">
+      <orders>
+        <order order="Escort" default="true">
+          <param name="formation" value="formationshape.xshapeforward"/>
+          <param name="overrideformationskill" value="true"/>
+        </order>
+      </orders>
+      <category faction="terran" tags="[military, destroyer]" size="ship_l"/>
+      <quota wing="2"/>
+      <location class="galaxy" macro="vas_th_galaxy_macro"/>
+      <environment buildatshipyard="true"/>
+      <modifiers subordinate="true"/>
+      <ship>
+        <select faction="terran" tags="[military, destroyer]" size="ship_l"/>
+        <loadout>
+          <quantity exact="1.0"/>
+          <quality exact="0.9"><variation exact="0.6"/></quality>
+        </loadout>
+        <owner exact="terran" overridenpc="true"/>
+      </ship>
+      <subordinates>
+        <subordinate job="vas_th_ter_dest_m" assignment="attack"/>
+      </subordinates>
+    </job>
+
+    <!-- ============================================================ -->
+    <!-- ROOTS                                                        -->
+    <!-- ============================================================ -->
+
+    <!-- s01 ARG vs TER Military: Argon attacker carrier + destroyer roots (Patrol) -->
+    <job id="vas_th_arg_carrier_s01" name="{2026062301,1000}">
+      <modifiers commandeerable="true"/>
+      <orders>
+        <order order="Patrol" default="true">
+          <param name="range" value="class.zone"/>
+        </order>
+      </orders>
+      <category faction="argon" tags="[military, carrier]" size="ship_xl"/>
+      <quota galaxy="2"/>
+      <location class="zone" macro="zone_vas_th_s01_argonforce_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="argon" tags="[military, carrier]" size="ship_xl"/>
+        <loadout>
+          <quantity exact="1.0"/>
+          <quality exact="0.9"><variation exact="0.6"/></quality>
+        </loadout>
+        <owner exact="argon" overridenpc="true"/>
+      </ship>
+      <subordinates>
+        <subordinate job="vas_th_arg_carrier_m" assignment="attack"/>
+        <subordinate job="vas_th_arg_carrier_s" assignment="attack"/>
+      </subordinates>
+    </job>
+    <job id="vas_th_arg_destroyer_s01" name="{2026062301,1001}">
+      <modifiers commandeerable="true"/>
+      <orders>
+        <order order="Patrol" default="true">
+          <param name="range" value="class.zone"/>
+        </order>
+      </orders>
+      <category faction="argon" tags="[military, destroyer]" size="ship_l"/>
+      <quota galaxy="4"/>
+      <location class="zone" macro="zone_vas_th_s01_argonforce_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="argon" tags="[military, destroyer]" size="ship_l"/>
+        <loadout>
+          <quantity exact="1.0"/>
+          <quality exact="0.9"><variation exact="0.6"/></quality>
+        </loadout>
+        <owner exact="argon" overridenpc="true"/>
+      </ship>
+      <subordinates>
+        <subordinate job="vas_th_arg_destroyer_sub" assignment="attack"/>
+        <subordinate job="vas_th_arg_dest_m" assignment="attack"/>
+      </subordinates>
+    </job>
+
+    <!-- s01 ARG vs TER Military: Terran target carrier + destroyer roots (Patrol; both sides exercised) -->
+    <job id="vas_th_ter_carrier_s01" name="{2026062301,1100}">
+      <modifiers commandeerable="true"/>
+      <orders>
+        <order order="Patrol" default="true">
+          <param name="range" value="class.zone"/>
+        </order>
+      </orders>
+      <category faction="terran" tags="[military, carrier]" size="ship_xl"/>
+      <quota galaxy="2"/>
+      <location class="zone" macro="zone_vas_th_s01_terranforce_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="terran" tags="[military, carrier]" size="ship_xl"/>
+        <loadout>
+          <quantity exact="1.0"/>
+          <quality exact="0.9"><variation exact="0.6"/></quality>
+        </loadout>
+        <owner exact="terran" overridenpc="true"/>
+      </ship>
+      <subordinates>
+        <subordinate job="vas_th_ter_carrier_m" assignment="attack"/>
+        <subordinate job="vas_th_ter_carrier_s" assignment="attack"/>
+      </subordinates>
+    </job>
+    <job id="vas_th_ter_destroyer_s01" name="{2026062301,1101}">
+      <modifiers commandeerable="true"/>
+      <orders>
+        <order order="Patrol" default="true">
+          <param name="range" value="class.zone"/>
+        </order>
+      </orders>
+      <category faction="terran" tags="[military, destroyer]" size="ship_l"/>
+      <quota galaxy="4"/>
+      <location class="zone" macro="zone_vas_th_s01_terranforce_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="terran" tags="[military, destroyer]" size="ship_l"/>
+        <loadout>
+          <quantity exact="1.0"/>
+          <quality exact="0.9"><variation exact="0.6"/></quality>
+        </loadout>
+        <owner exact="terran" overridenpc="true"/>
+      </ship>
+      <subordinates>
+        <subordinate job="vas_th_ter_destroyer_sub" assignment="attack"/>
+        <subordinate job="vas_th_ter_dest_m" assignment="attack"/>
+      </subordinates>
+    </job>
+
+    <!-- s02 ARG vs TER Defence Stations: Argon attacker carrier + destroyer roots (Patrol). Targets = Terran stations. -->
+    <job id="vas_th_arg_carrier_s02" name="{2026062301,1000}">
+      <modifiers commandeerable="true"/>
+      <orders>
+        <order order="Patrol" default="true">
+          <param name="range" value="class.zone"/>
+        </order>
+      </orders>
+      <category faction="argon" tags="[military, carrier]" size="ship_xl"/>
+      <quota galaxy="2"/>
+      <location class="zone" macro="zone_vas_th_s02_argonforce_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="argon" tags="[military, carrier]" size="ship_xl"/>
+        <loadout>
+          <quantity exact="1.0"/>
+          <quality exact="0.9"><variation exact="0.6"/></quality>
+        </loadout>
+        <owner exact="argon" overridenpc="true"/>
+      </ship>
+      <subordinates>
+        <subordinate job="vas_th_arg_carrier_m" assignment="attack"/>
+        <subordinate job="vas_th_arg_carrier_s" assignment="attack"/>
+      </subordinates>
+    </job>
+    <job id="vas_th_arg_destroyer_s02" name="{2026062301,1001}">
+      <modifiers commandeerable="true"/>
+      <orders>
+        <order order="Patrol" default="true">
+          <param name="range" value="class.zone"/>
+        </order>
+      </orders>
+      <category faction="argon" tags="[military, destroyer]" size="ship_l"/>
+      <quota galaxy="4"/>
+      <location class="zone" macro="zone_vas_th_s02_argonforce_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="argon" tags="[military, destroyer]" size="ship_l"/>
+        <loadout>
+          <quantity exact="1.0"/>
+          <quality exact="0.9"><variation exact="0.6"/></quality>
+        </loadout>
+        <owner exact="argon" overridenpc="true"/>
+      </ship>
+      <subordinates>
+        <subordinate job="vas_th_arg_destroyer_sub" assignment="attack"/>
+        <subordinate job="vas_th_arg_dest_m" assignment="attack"/>
+      </subordinates>
+    </job>
+
+    <!-- ============================================================ -->
+    <!-- s03 ARG vs TER Civil Ships: Argon attacker vs Terran civil -->
+    <!-- ============================================================ -->
+
+    <!-- Argon military attacker roots (Patrol), reuse the Argon subordinate tree -->
+    <job id="vas_th_arg_carrier_s03" name="{2026062301,1000}">
+      <modifiers commandeerable="true"/>
+      <orders>
+        <order order="Patrol" default="true">
+          <param name="range" value="class.zone"/>
+        </order>
+      </orders>
+      <category faction="argon" tags="[military, carrier]" size="ship_xl"/>
+      <quota galaxy="2"/>
+      <location class="zone" macro="zone_vas_th_s03_argonforce_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="argon" tags="[military, carrier]" size="ship_xl"/>
+        <loadout>
+          <quantity exact="1.0"/>
+          <quality exact="0.9"><variation exact="0.6"/></quality>
+        </loadout>
+        <owner exact="argon" overridenpc="true"/>
+      </ship>
+      <subordinates>
+        <subordinate job="vas_th_arg_carrier_m" assignment="attack"/>
+        <subordinate job="vas_th_arg_carrier_s" assignment="attack"/>
+      </subordinates>
+    </job>
+    <job id="vas_th_arg_destroyer_s03" name="{2026062301,1001}">
+      <modifiers commandeerable="true"/>
+      <orders>
+        <order order="Patrol" default="true">
+          <param name="range" value="class.zone"/>
+        </order>
+      </orders>
+      <category faction="argon" tags="[military, destroyer]" size="ship_l"/>
+      <quota galaxy="4"/>
+      <location class="zone" macro="zone_vas_th_s03_argonforce_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="argon" tags="[military, destroyer]" size="ship_l"/>
+        <loadout>
+          <quantity exact="1.0"/>
+          <quality exact="0.9"><variation exact="0.6"/></quality>
+        </loadout>
+        <owner exact="argon" overridenpc="true"/>
+      </ship>
+      <subordinates>
+        <subordinate job="vas_th_arg_destroyer_sub" assignment="attack"/>
+        <subordinate job="vas_th_arg_dest_m" assignment="attack"/>
+      </subordinates>
+    </job>
+
+    <!-- Terran CIVIL ship targets (flat list per spec: 2x each of M/L solid miner,
+         M/L liquid miner, M/L trader). Vanilla civil orders keep them non-patrol;
+         they have ~no DPS so they only ever act as targets. -->
+    <job id="vas_th_ter_civ_miner_solid_m" name="{2026062301,1110}">
+      <modifiers commandeerable="true"/>
+      <orders>
+        <order order="MiningRoutine" default="true">
+          <param name="minbuy" value="0"/>
+          <param name="maxbuy" value="5"/>
+          <param name="minsell" value="0"/>
+          <param name="maxsell" value="5"/>
+        </order>
+      </orders>
+      <category faction="terran" tags="[miner, solid]" size="ship_m"/>
+      <quota galaxy="2"/>
+      <location class="zone" macro="zone_vas_th_s03_terrancivil_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="terran" tags="[miner, solid]" size="ship_m"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="terran" overridenpc="true"/>
+      </ship>
+    </job>
+    <job id="vas_th_ter_civ_miner_solid_l" name="{2026062301,1110}">
+      <modifiers commandeerable="true"/>
+      <orders>
+        <order order="MiningRoutine" default="true">
+          <param name="minbuy" value="0"/>
+          <param name="maxbuy" value="5"/>
+          <param name="minsell" value="0"/>
+          <param name="maxsell" value="5"/>
+        </order>
+      </orders>
+      <category faction="terran" tags="[miner, solid]" size="ship_l"/>
+      <quota galaxy="2"/>
+      <location class="zone" macro="zone_vas_th_s03_terrancivil_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="terran" tags="[miner, solid]" size="ship_l"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="terran" overridenpc="true"/>
+      </ship>
+    </job>
+    <job id="vas_th_ter_civ_miner_liquid_m" name="{2026062301,1110}">
+      <modifiers commandeerable="true"/>
+      <orders>
+        <order order="MiningRoutine" default="true">
+          <param name="minbuy" value="0"/>
+          <param name="maxbuy" value="5"/>
+          <param name="minsell" value="0"/>
+          <param name="maxsell" value="5"/>
+        </order>
+      </orders>
+      <category faction="terran" tags="[miner, liquid]" size="ship_m"/>
+      <quota galaxy="2"/>
+      <location class="zone" macro="zone_vas_th_s03_terrancivil_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="terran" tags="[miner, liquid]" size="ship_m"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="terran" overridenpc="true"/>
+      </ship>
+    </job>
+    <job id="vas_th_ter_civ_miner_liquid_l" name="{2026062301,1110}">
+      <modifiers commandeerable="true"/>
+      <orders>
+        <order order="MiningRoutine" default="true">
+          <param name="minbuy" value="0"/>
+          <param name="maxbuy" value="5"/>
+          <param name="minsell" value="0"/>
+          <param name="maxsell" value="5"/>
+        </order>
+      </orders>
+      <category faction="terran" tags="[miner, liquid]" size="ship_l"/>
+      <quota galaxy="2"/>
+      <location class="zone" macro="zone_vas_th_s03_terrancivil_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="terran" tags="[miner, liquid]" size="ship_l"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="terran" overridenpc="true"/>
+      </ship>
+    </job>
+    <job id="vas_th_ter_civ_trader_m" name="{2026062301,1111}">
+      <modifiers commandeerable="true"/>
+      <orders>
+        <order order="TradeRoutine" default="true">
+          <param name="minbuy" value="0"/>
+          <param name="maxbuy" value="5"/>
+          <param name="minsell" value="0"/>
+          <param name="maxsell" value="5"/>
+        </order>
+      </orders>
+      <category faction="terran" tags="[trader, container]" size="ship_m"/>
+      <quota galaxy="2"/>
+      <location class="zone" macro="zone_vas_th_s03_terrancivil_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="terran" tags="[trader, container]" size="ship_m"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="terran" overridenpc="true"/>
+      </ship>
+    </job>
+    <job id="vas_th_ter_civ_trader_l" name="{2026062301,1111}">
+      <modifiers commandeerable="true"/>
+      <orders>
+        <order order="TradeRoutine" default="true">
+          <param name="minbuy" value="0"/>
+          <param name="maxbuy" value="5"/>
+          <param name="minsell" value="0"/>
+          <param name="maxsell" value="5"/>
+        </order>
+      </orders>
+      <category faction="terran" tags="[trader, container]" size="ship_l"/>
+      <quota galaxy="2"/>
+      <location class="zone" macro="zone_vas_th_s03_terrancivil_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="terran" tags="[trader, container]" size="ship_l"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="terran" overridenpc="true"/>
+      </ship>
+    </job>
+
+    <!-- ============================================================ -->
+    <!-- s04 ARG vs TER Civil Stations: Argon attacker - TER civil stations target -->
+    <!-- ============================================================ -->
+    <job id="vas_th_arg_carrier_s04" name="{2026062301,1000}">
+      <modifiers commandeerable="true"/>
+      <orders>
+        <order order="Patrol" default="true">
+          <param name="range" value="class.zone"/>
+        </order>
+      </orders>
+      <category faction="argon" tags="[military, carrier]" size="ship_xl"/>
+      <quota galaxy="2"/>
+      <location class="zone" macro="zone_vas_th_s04_argonforce_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="argon" tags="[military, carrier]" size="ship_xl"/>
+        <loadout>
+          <quantity exact="1.0"/>
+          <quality exact="0.9"><variation exact="0.6"/></quality>
+        </loadout>
+        <owner exact="argon" overridenpc="true"/>
+      </ship>
+      <subordinates>
+        <subordinate job="vas_th_arg_carrier_m" assignment="attack"/>
+        <subordinate job="vas_th_arg_carrier_s" assignment="attack"/>
+      </subordinates>
+    </job>
+    <job id="vas_th_arg_destroyer_s04" name="{2026062301,1001}">
+      <modifiers commandeerable="true"/>
+      <orders>
+        <order order="Patrol" default="true">
+          <param name="range" value="class.zone"/>
+        </order>
+      </orders>
+      <category faction="argon" tags="[military, destroyer]" size="ship_l"/>
+      <quota galaxy="4"/>
+      <location class="zone" macro="zone_vas_th_s04_argonforce_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="argon" tags="[military, destroyer]" size="ship_l"/>
+        <loadout>
+          <quantity exact="1.0"/>
+          <quality exact="0.9"><variation exact="0.6"/></quality>
+        </loadout>
+        <owner exact="argon" overridenpc="true"/>
+      </ship>
+      <subordinates>
+        <subordinate job="vas_th_arg_destroyer_sub" assignment="attack"/>
+        <subordinate job="vas_th_arg_dest_m" assignment="attack"/>
+      </subordinates>
+    </job>
+
+    <!-- ============================================================ -->
+    <!-- PLAYER military tree (spawned as ANTIGONE marker, reassigned   -->
+    <!-- to player by md/vas_epai_test_harness.xml ReassignPlayerForces).-->
+    <!-- Antigone uses Argon ship designs and does not appear in these  -->
+    <!-- remote sectors, so it is a safe, identifiable marker owner.    -->
+    <!-- ============================================================ -->
+    <job id="vas_th_pl_carrier_m" name="{2026062301,1002}" startactive="false">
+      <orders><order order="Escort" default="true"><param name="formation" value="formationshape.xshapeforward"/><param name="overrideformationskill" value="true"/></order></orders>
+      <category faction="argon" tags="[military]" size="ship_m"/>
+      <quota wing="4"/>
+      <location class="galaxy" macro="vas_th_galaxy_macro"/>
+      <environment buildatshipyard="true"/>
+      <modifiers subordinate="true"/>
+      <ship>
+        <select faction="argon" tags="[military]" size="ship_m"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="antigone" overridenpc="true"/>
+      </ship>
+      <subordinates><subordinate job="vas_th_pl_carrier_m_s" assignment="attack"/></subordinates>
+    </job>
+    <job id="vas_th_pl_carrier_m_s" name="{2026062301,1003}" startactive="false">
+      <orders><order order="Escort" default="true"><param name="formation" value="formationshape.xshapeforward"/><param name="overrideformationskill" value="true"/></order></orders>
+      <category faction="argon" tags="[military]" size="ship_s"/>
+      <quota wing="4"/>
+      <location class="galaxy" macro="vas_th_galaxy_macro"/>
+      <environment buildatshipyard="true"/>
+      <modifiers subordinate="true"/>
+      <ship>
+        <select faction="argon" tags="[military]" size="ship_s"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="antigone" overridenpc="true"/>
+      </ship>
+    </job>
+    <job id="vas_th_pl_carrier_s" name="{2026062301,1003}" startactive="false">
+      <orders><order order="Escort" default="true"><param name="formation" value="formationshape.xshapeforward"/><param name="overrideformationskill" value="true"/></order></orders>
+      <category faction="argon" tags="[military]" size="ship_s"/>
+      <quota wing="12"/>
+      <location class="galaxy" macro="vas_th_galaxy_macro"/>
+      <environment buildatshipyard="true"/>
+      <modifiers subordinate="true"/>
+      <ship>
+        <select faction="argon" tags="[military]" size="ship_s"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="antigone" overridenpc="true"/>
+      </ship>
+    </job>
+    <job id="vas_th_pl_dest_m_s" name="{2026062301,1006}" startactive="false">
+      <orders><order order="Escort" default="true"><param name="formation" value="formationshape.xshapeforward"/><param name="overrideformationskill" value="true"/></order></orders>
+      <category faction="argon" tags="[military]" size="ship_s"/>
+      <quota wing="2"/>
+      <location class="galaxy" macro="vas_th_galaxy_macro"/>
+      <environment buildatshipyard="true"/>
+      <modifiers subordinate="true"/>
+      <ship>
+        <select faction="argon" tags="[military]" size="ship_s"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="antigone" overridenpc="true"/>
+      </ship>
+    </job>
+    <job id="vas_th_pl_dest_m" name="{2026062301,1005}" startactive="false">
+      <orders><order order="Escort" default="true"><param name="formation" value="formationshape.xshapeforward"/><param name="overrideformationskill" value="true"/></order></orders>
+      <category faction="argon" tags="[military]" size="ship_m"/>
+      <quota wing="1"/>
+      <location class="galaxy" macro="vas_th_galaxy_macro"/>
+      <environment buildatshipyard="true"/>
+      <modifiers subordinate="true"/>
+      <ship>
+        <select faction="argon" tags="[military]" size="ship_m"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="antigone" overridenpc="true"/>
+      </ship>
+      <subordinates><subordinate job="vas_th_pl_dest_m_s" assignment="attack"/></subordinates>
+    </job>
+    <job id="vas_th_pl_destroyer_sub" name="{2026062301,1004}" startactive="false">
+      <orders><order order="Escort" default="true"><param name="formation" value="formationshape.xshapeforward"/><param name="overrideformationskill" value="true"/></order></orders>
+      <category faction="argon" tags="[military, destroyer]" size="ship_l"/>
+      <quota wing="2"/>
+      <location class="galaxy" macro="vas_th_galaxy_macro"/>
+      <environment buildatshipyard="true"/>
+      <modifiers subordinate="true"/>
+      <ship>
+        <select faction="argon" tags="[military, destroyer]" size="ship_l"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="antigone" overridenpc="true"/>
+      </ship>
+      <subordinates><subordinate job="vas_th_pl_dest_m" assignment="attack"/></subordinates>
+    </job>
+
+    <!-- Player attacker roots (Patrol), lean quota (q1) since these are reassigned to player by MD. -->
+    <job id="vas_th_pl_carrier_frontier" name="{2026062301,1000}">
+      <modifiers commandeerable="true"/>
+      <orders><order order="Patrol" default="true"><param name="range" value="class.zone"/></order></orders>
+      <category faction="argon" tags="[military, carrier]" size="ship_xl"/>
+      <quota galaxy="1"/>
+      <location class="zone" macro="zone_vas_th_s05_playerforce_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="argon" tags="[military, carrier]" size="ship_xl"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="antigone" overridenpc="true"/>
+      </ship>
+      <subordinates><subordinate job="vas_th_pl_carrier_m" assignment="attack"/><subordinate job="vas_th_pl_carrier_s" assignment="attack"/></subordinates>
+    </job>
+    <job id="vas_th_pl_destroyer_frontier" name="{2026062301,1001}">
+      <modifiers commandeerable="true"/>
+      <orders><order order="Patrol" default="true"><param name="range" value="class.zone"/></order></orders>
+      <category faction="argon" tags="[military, destroyer]" size="ship_l"/>
+      <quota galaxy="1"/>
+      <location class="zone" macro="zone_vas_th_s05_playerforce_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="argon" tags="[military, destroyer]" size="ship_l"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="antigone" overridenpc="true"/>
+      </ship>
+      <subordinates><subordinate job="vas_th_pl_destroyer_sub" assignment="attack"/><subordinate job="vas_th_pl_dest_m" assignment="attack"/></subordinates>
+    </job>
+    <job id="vas_th_pl_carrier_silentwitness" name="{2026062301,1000}">
+      <modifiers commandeerable="true"/>
+      <orders><order order="Patrol" default="true"><param name="range" value="class.zone"/></order></orders>
+      <category faction="argon" tags="[military, carrier]" size="ship_xl"/>
+      <quota galaxy="1"/>
+      <location class="zone" macro="zone_vas_th_s06_playerforce_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="argon" tags="[military, carrier]" size="ship_xl"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="antigone" overridenpc="true"/>
+      </ship>
+      <subordinates><subordinate job="vas_th_pl_carrier_m" assignment="attack"/><subordinate job="vas_th_pl_carrier_s" assignment="attack"/></subordinates>
+    </job>
+    <job id="vas_th_pl_destroyer_silentwitness" name="{2026062301,1001}">
+      <modifiers commandeerable="true"/>
+      <orders><order order="Patrol" default="true"><param name="range" value="class.zone"/></order></orders>
+      <category faction="argon" tags="[military, destroyer]" size="ship_l"/>
+      <quota galaxy="1"/>
+      <location class="zone" macro="zone_vas_th_s06_playerforce_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="argon" tags="[military, destroyer]" size="ship_l"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="antigone" overridenpc="true"/>
+      </ship>
+      <subordinates><subordinate job="vas_th_pl_destroyer_sub" assignment="attack"/><subordinate job="vas_th_pl_dest_m" assignment="attack"/></subordinates>
+    </job>
+    <job id="vas_th_pl_carrier_s07" name="{2026062301,1000}">
+      <modifiers commandeerable="true"/>
+      <orders><order order="Patrol" default="true"><param name="range" value="class.zone"/></order></orders>
+      <category faction="argon" tags="[military, carrier]" size="ship_xl"/>
+      <quota galaxy="1"/>
+      <location class="zone" macro="zone_vas_th_s07_playerforce_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="argon" tags="[military, carrier]" size="ship_xl"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="antigone" overridenpc="true"/>
+      </ship>
+      <subordinates><subordinate job="vas_th_pl_carrier_m" assignment="attack"/><subordinate job="vas_th_pl_carrier_s" assignment="attack"/></subordinates>
+    </job>
+    <job id="vas_th_pl_destroyer_s07" name="{2026062301,1001}">
+      <modifiers commandeerable="true"/>
+      <orders><order order="Patrol" default="true"><param name="range" value="class.zone"/></order></orders>
+      <category faction="argon" tags="[military, destroyer]" size="ship_l"/>
+      <quota galaxy="1"/>
+      <location class="zone" macro="zone_vas_th_s07_playerforce_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="argon" tags="[military, destroyer]" size="ship_l"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="antigone" overridenpc="true"/>
+      </ship>
+      <subordinates><subordinate job="vas_th_pl_destroyer_sub" assignment="attack"/><subordinate job="vas_th_pl_dest_m" assignment="attack"/></subordinates>
+    </job>
+    <job id="vas_th_pl_carrier_nopileos" name="{2026062301,1000}">
+      <modifiers commandeerable="true"/>
+      <orders><order order="Patrol" default="true"><param name="range" value="class.zone"/></order></orders>
+      <category faction="argon" tags="[military, carrier]" size="ship_xl"/>
+      <quota galaxy="1"/>
+      <location class="zone" macro="zone_vas_th_s08_playerforce_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="argon" tags="[military, carrier]" size="ship_xl"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="antigone" overridenpc="true"/>
+      </ship>
+      <subordinates><subordinate job="vas_th_pl_carrier_m" assignment="attack"/><subordinate job="vas_th_pl_carrier_s" assignment="attack"/></subordinates>
+    </job>
+    <job id="vas_th_pl_destroyer_nopileos" name="{2026062301,1001}">
+      <modifiers commandeerable="true"/>
+      <orders><order order="Patrol" default="true"><param name="range" value="class.zone"/></order></orders>
+      <category faction="argon" tags="[military, destroyer]" size="ship_l"/>
+      <quota galaxy="1"/>
+      <location class="zone" macro="zone_vas_th_s08_playerforce_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="argon" tags="[military, destroyer]" size="ship_l"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="antigone" overridenpc="true"/>
+      </ship>
+      <subordinates><subordinate job="vas_th_pl_destroyer_sub" assignment="attack"/><subordinate job="vas_th_pl_dest_m" assignment="attack"/></subordinates>
+    </job>
+
+    <!-- ============================================================ -->
+    <!-- PARANID military tree (target in s07 Player vs PAR Military)              -->
+    <!-- ============================================================ -->
+    <job id="vas_th_par_carrier_m" name="{2026062301,1002}" startactive="false">
+      <orders><order order="Escort" default="true"><param name="formation" value="formationshape.xshapeforward"/><param name="overrideformationskill" value="true"/></order></orders>
+      <category faction="paranid" tags="[military]" size="ship_m"/>
+      <quota wing="4"/>
+      <location class="galaxy" macro="vas_th_galaxy_macro"/>
+      <environment buildatshipyard="true"/>
+      <modifiers subordinate="true"/>
+      <ship>
+        <select faction="paranid" tags="[military]" size="ship_m"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="paranid" overridenpc="true"/>
+      </ship>
+      <subordinates><subordinate job="vas_th_par_carrier_m_s" assignment="attack"/></subordinates>
+    </job>
+    <job id="vas_th_par_carrier_m_s" name="{2026062301,1003}" startactive="false">
+      <orders><order order="Escort" default="true"><param name="formation" value="formationshape.xshapeforward"/><param name="overrideformationskill" value="true"/></order></orders>
+      <category faction="paranid" tags="[military]" size="ship_s"/>
+      <quota wing="4"/>
+      <location class="galaxy" macro="vas_th_galaxy_macro"/>
+      <environment buildatshipyard="true"/>
+      <modifiers subordinate="true"/>
+      <ship>
+        <select faction="paranid" tags="[military]" size="ship_s"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="paranid" overridenpc="true"/>
+      </ship>
+    </job>
+    <job id="vas_th_par_carrier_s" name="{2026062301,1003}" startactive="false">
+      <orders><order order="Escort" default="true"><param name="formation" value="formationshape.xshapeforward"/><param name="overrideformationskill" value="true"/></order></orders>
+      <category faction="paranid" tags="[military]" size="ship_s"/>
+      <quota wing="12"/>
+      <location class="galaxy" macro="vas_th_galaxy_macro"/>
+      <environment buildatshipyard="true"/>
+      <modifiers subordinate="true"/>
+      <ship>
+        <select faction="paranid" tags="[military]" size="ship_s"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="paranid" overridenpc="true"/>
+      </ship>
+    </job>
+    <job id="vas_th_par_dest_m_s" name="{2026062301,1006}" startactive="false">
+      <orders><order order="Escort" default="true"><param name="formation" value="formationshape.xshapeforward"/><param name="overrideformationskill" value="true"/></order></orders>
+      <category faction="paranid" tags="[military]" size="ship_s"/>
+      <quota wing="2"/>
+      <location class="galaxy" macro="vas_th_galaxy_macro"/>
+      <environment buildatshipyard="true"/>
+      <modifiers subordinate="true"/>
+      <ship>
+        <select faction="paranid" tags="[military]" size="ship_s"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="paranid" overridenpc="true"/>
+      </ship>
+    </job>
+    <job id="vas_th_par_dest_m" name="{2026062301,1005}" startactive="false">
+      <orders><order order="Escort" default="true"><param name="formation" value="formationshape.xshapeforward"/><param name="overrideformationskill" value="true"/></order></orders>
+      <category faction="paranid" tags="[military]" size="ship_m"/>
+      <quota wing="1"/>
+      <location class="galaxy" macro="vas_th_galaxy_macro"/>
+      <environment buildatshipyard="true"/>
+      <modifiers subordinate="true"/>
+      <ship>
+        <select faction="paranid" tags="[military]" size="ship_m"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="paranid" overridenpc="true"/>
+      </ship>
+      <subordinates><subordinate job="vas_th_par_dest_m_s" assignment="attack"/></subordinates>
+    </job>
+    <job id="vas_th_par_destroyer_sub" name="{2026062301,1004}" startactive="false">
+      <orders><order order="Escort" default="true"><param name="formation" value="formationshape.xshapeforward"/><param name="overrideformationskill" value="true"/></order></orders>
+      <category faction="paranid" tags="[military, destroyer]" size="ship_l"/>
+      <quota wing="2"/>
+      <location class="galaxy" macro="vas_th_galaxy_macro"/>
+      <environment buildatshipyard="true"/>
+      <modifiers subordinate="true"/>
+      <ship>
+        <select faction="paranid" tags="[military, destroyer]" size="ship_l"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="paranid" overridenpc="true"/>
+      </ship>
+      <subordinates><subordinate job="vas_th_par_dest_m" assignment="attack"/></subordinates>
+    </job>
+
+    <!-- s07 Player vs PAR Military: Paranid military target roots (Patrol; both sides exercised) -->
+    <job id="vas_th_par_carrier_s07" name="{2026062301,1100}">
+      <modifiers commandeerable="true"/>
+      <orders><order order="Patrol" default="true"><param name="range" value="class.zone"/></order></orders>
+      <category faction="paranid" tags="[military, carrier]" size="ship_xl"/>
+      <quota galaxy="1"/>
+      <location class="zone" macro="zone_vas_th_s07_paranidmil_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="paranid" tags="[military, carrier]" size="ship_xl"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="paranid" overridenpc="true"/>
+      </ship>
+      <subordinates><subordinate job="vas_th_par_carrier_m" assignment="attack"/><subordinate job="vas_th_par_carrier_s" assignment="attack"/></subordinates>
+    </job>
+    <job id="vas_th_par_destroyer_s07" name="{2026062301,1101}">
+      <modifiers commandeerable="true"/>
+      <orders><order order="Patrol" default="true"><param name="range" value="class.zone"/></order></orders>
+      <category faction="paranid" tags="[military, destroyer]" size="ship_l"/>
+      <quota galaxy="2"/>
+      <location class="zone" macro="zone_vas_th_s07_paranidmil_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="paranid" tags="[military, destroyer]" size="ship_l"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="paranid" overridenpc="true"/>
+      </ship>
+      <subordinates><subordinate job="vas_th_par_destroyer_sub" assignment="attack"/><subordinate job="vas_th_par_dest_m" assignment="attack"/></subordinates>
+    </job>
+
+    <!-- ============================================================ -->
+    <!-- s08 Player vs PAR Civil Ships: PARANID civil ship targets -->
+    <!-- ============================================================ -->
+    <job id="vas_th_par_civ_miner_solid_m" name="{2026062301,1112}">
+      <modifiers commandeerable="true"/>
+      <orders><order order="MiningRoutine" default="true"><param name="minbuy" value="0"/><param name="maxbuy" value="5"/><param name="minsell" value="0"/><param name="maxsell" value="5"/></order></orders>
+      <category faction="paranid" tags="[miner, solid]" size="ship_m"/>
+      <quota galaxy="2"/>
+      <location class="zone" macro="zone_vas_th_s08_paranidcivil_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="paranid" tags="[miner, solid]" size="ship_m"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="paranid" overridenpc="true"/>
+      </ship>
+    </job>
+    <job id="vas_th_par_civ_miner_solid_l" name="{2026062301,1112}">
+      <modifiers commandeerable="true"/>
+      <orders><order order="MiningRoutine" default="true"><param name="minbuy" value="0"/><param name="maxbuy" value="5"/><param name="minsell" value="0"/><param name="maxsell" value="5"/></order></orders>
+      <category faction="paranid" tags="[miner, solid]" size="ship_l"/>
+      <quota galaxy="2"/>
+      <location class="zone" macro="zone_vas_th_s08_paranidcivil_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="paranid" tags="[miner, solid]" size="ship_l"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="paranid" overridenpc="true"/>
+      </ship>
+    </job>
+    <job id="vas_th_par_civ_miner_liquid_m" name="{2026062301,1112}">
+      <modifiers commandeerable="true"/>
+      <orders><order order="MiningRoutine" default="true"><param name="minbuy" value="0"/><param name="maxbuy" value="5"/><param name="minsell" value="0"/><param name="maxsell" value="5"/></order></orders>
+      <category faction="paranid" tags="[miner, liquid]" size="ship_m"/>
+      <quota galaxy="2"/>
+      <location class="zone" macro="zone_vas_th_s08_paranidcivil_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="paranid" tags="[miner, liquid]" size="ship_m"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="paranid" overridenpc="true"/>
+      </ship>
+    </job>
+    <job id="vas_th_par_civ_miner_liquid_l" name="{2026062301,1112}">
+      <modifiers commandeerable="true"/>
+      <orders><order order="MiningRoutine" default="true"><param name="minbuy" value="0"/><param name="maxbuy" value="5"/><param name="minsell" value="0"/><param name="maxsell" value="5"/></order></orders>
+      <category faction="paranid" tags="[miner, liquid]" size="ship_l"/>
+      <quota galaxy="2"/>
+      <location class="zone" macro="zone_vas_th_s08_paranidcivil_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="paranid" tags="[miner, liquid]" size="ship_l"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="paranid" overridenpc="true"/>
+      </ship>
+    </job>
+    <job id="vas_th_par_civ_trader_m" name="{2026062301,1113}">
+      <modifiers commandeerable="true"/>
+      <orders><order order="TradeRoutine" default="true"><param name="minbuy" value="0"/><param name="maxbuy" value="5"/><param name="minsell" value="0"/><param name="maxsell" value="5"/></order></orders>
+      <category faction="paranid" tags="[trader, container]" size="ship_m"/>
+      <quota galaxy="2"/>
+      <location class="zone" macro="zone_vas_th_s08_paranidcivil_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="paranid" tags="[trader, container]" size="ship_m"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="paranid" overridenpc="true"/>
+      </ship>
+    </job>
+    <job id="vas_th_par_civ_trader_l" name="{2026062301,1113}">
+      <modifiers commandeerable="true"/>
+      <orders><order order="TradeRoutine" default="true"><param name="minbuy" value="0"/><param name="maxbuy" value="5"/><param name="minsell" value="0"/><param name="maxsell" value="5"/></order></orders>
+      <category faction="paranid" tags="[trader, container]" size="ship_l"/>
+      <quota galaxy="2"/>
+      <location class="zone" macro="zone_vas_th_s08_paranidcivil_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="paranid" tags="[trader, container]" size="ship_l"/>
+        <loadout><quantity exact="1.0"/><quality exact="0.9"><variation exact="0.6"/></quality></loadout>
+        <owner exact="paranid" overridenpc="true"/>
+      </ship>
+    </job>
+
+    <!-- ============================================================ -->
+    <!-- s21 Targeting VFF Secondary: close TER patrol vs ARG scout group -->
+    <!-- ============================================================ -->
+    <job id="vas_th_targeting_arg_scout_sub_s21" name="{2026062301,1201}" startactive="false">
+      <orders>
+        <order order="Wait" default="true">
+          <param name="allowdocked" value="false"/>
+          <param name="fidget" value="false"/>
+        </order>
+      </orders>
+      <category faction="argon" tags="[scout]" size="ship_s"/>
+      <quota wing="4"/>
+      <location class="zone" macro="zone_vas_th_targeting_vff_arg_macro"/>
+      <environment buildatshipyard="true"/>
+      <modifiers subordinate="true"/>
+      <ship>
+        <select faction="argon" tags="[scout]" size="ship_s"/>
+        <loadout>
+          <quantity exact="1.0"/>
+          <quality exact="0.9"><variation exact="0.6"/></quality>
+        </loadout>
+        <owner exact="argon" overridenpc="true"/>
+      </ship>
+    </job>
+
+    <job id="vas_th_targeting_arg_scout_root_s21" name="{2026062301,1200}">
+      <modifiers commandeerable="true"/>
+      <orders>
+        <order order="Wait" default="true">
+          <param name="allowdocked" value="false"/>
+          <param name="fidget" value="false"/>
+        </order>
+      </orders>
+      <category faction="argon" tags="[scout]" size="ship_s"/>
+      <quota galaxy="1"/>
+      <location class="zone" macro="zone_vas_th_targeting_vff_arg_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="argon" tags="[scout]" size="ship_s"/>
+        <loadout>
+          <quantity exact="1.0"/>
+          <quality exact="0.9"><variation exact="0.6"/></quality>
+        </loadout>
+        <owner exact="argon" overridenpc="true"/>
+      </ship>
+      <subordinates>
+        <subordinate job="vas_th_targeting_arg_scout_sub_s21" assignment="attack"/>
+      </subordinates>
+    </job>
+
+    <job id="vas_th_targeting_ter_destroyer_s21" name="{2026062301,1202}">
+      <modifiers commandeerable="true"/>
+      <orders>
+        <order order="Patrol" default="true">
+          <param name="range" value="class.zone"/>
+        </order>
+      </orders>
+      <category faction="terran" tags="[military, destroyer]" size="ship_l"/>
+      <quota galaxy="1"/>
+      <location class="zone" macro="zone_vas_th_targeting_vff_ter_macro"/>
+      <environment buildatshipyard="true"/>
+      <ship>
+        <select faction="terran" tags="[military, destroyer]" size="ship_l"/>
+        <loadout>
+          <quantity exact="1.0"/>
+          <quality exact="0.9"><variation exact="0.6"/></quality>
+        </loadout>
+        <owner exact="terran" overridenpc="true"/>
+      </ship>
+    </job>
+
+    </gamestart>
+  </add>
+</diff>

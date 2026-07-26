@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mdscript name="VAS_EPAI_TestHarness" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="md.xsd">
+  <!--
+    Enhanced Patrol AI - Test Harness bootstrap (custom-gamestart edition).
+
+    The whole harness lives in its own empty galaxy (maps/vas_th_universe). Every cue
+    below is GUARDED by player.galaxy.macro == macro.vas_th_galaxy_macro so the mod is
+    completely inert in any other save/universe (it must never touch the player's real
+    games even while left enabled).
+
+    Responsibilities:
+      1. Global FACTION relations (set_faction_relation, then locked).
+      2. All test stations, created operational at runtime (the method proven to make
+         stations actually appear) - one player shipyard + faction defence targets.
+      3. Player blueprints (so the shipyard is usable).
+      4. Long-range private test satellites
+         for symmetric shared faction vision in every sector.
+      5. Reassigning the Antigone-marker player forces to the player (the Job Engine
+         cannot spawn owner="player").
+
+    Relations:
+      Argon  <-> Terran  : war      (-0.2)
+      Argon  <-> Player  : friendly (+1.0)
+      Terran <-> Player  : friendly (+1.0)
+      Paranid<-> Player  : war      (-0.2)
+
+    -0.2 prevents vanilla orders from attacking civil ships, so test cases to bypass that become viable
+  -->
+  <cues>
+
+    <!-- ============================================================ -->
+    <!-- 1. FACTION RELATIONS                                          -->
+    <!-- event_universe_generated fires at new-game AND every load, so -->
+    <!-- this self-heals; re-setting a correct relation is a no-op.    -->
+    <!-- ============================================================ -->
+    <cue name="ApplyRelations" instantiate="true">
+      <conditions>
+        <event_universe_generated/>
+        <check_value value="player.galaxy.macro == macro.vas_th_galaxy_macro"/>
+      </conditions>
+      <actions>
+        <!-- All factions relations are set to "0.2" and "-0.2", except for player being a spectator
+             This is required to be on the verge of vanilla-handled "kill"\"killmilitary" relation bands
+             which are making test of civilian attack override not possible -->
+        <set_faction_relation faction="faction.argon"   otherfaction="faction.terran"  value="-0.2"/>
+        <set_faction_relation faction="faction.terran"  otherfaction="faction.argon"   value="-0.2"/>
+        <set_faction_relation faction="faction.argon"   otherfaction="faction.player"  value="1.0"/>
+        <set_faction_relation faction="faction.player"  otherfaction="faction.argon"   value="1.0"/>
+        <set_faction_relation faction="faction.terran"  otherfaction="faction.player"  value="1.0"/>
+        <set_faction_relation faction="faction.player"  otherfaction="faction.terran"  value="1.0"/>
+        <set_faction_relation faction="faction.paranid" otherfaction="faction.player"  value="-0.2"/>
+        <set_faction_relation faction="faction.player"  otherfaction="faction.paranid" value="-0.2"/>
+
+        <!-- Pin the AI factions so diplomacy cannot drift the test relations.
+             Player left unlocked to keep diplomacy agency. -->
+        <set_faction_relation_locked faction="faction.argon"   locked="true" reason="'VAS Enhanced Patrol AI test harness'"/>
+        <set_faction_relation_locked faction="faction.terran"  locked="true" reason="'VAS Enhanced Patrol AI test harness'"/>
+        <set_faction_relation_locked faction="faction.paranid" locked="true" reason="'VAS Enhanced Patrol AI test harness'"/>
+
+        <debug_text text="'[VAS_EPAI_TestHarness] relations applied: ARG-TER war, ARG/TER-player friendly, PAR-player war, ARG+TER+PAR locked'" chance="100"/>
+      </actions>
+    </cue>
+
+    <!-- ============================================================ -->
+    <!-- 2./3. NEW-GAME SETUP: blueprints + all stations              -->
+    <!-- md.Setup.GameStart fires once at new game; the galaxy guard   -->
+    <!-- ensures it only runs for this gamestart.                      -->
+    <!-- ============================================================ -->
+    <cue name="SetupGameStart">
+      <conditions>
+        <event_cue_signalled cue="md.Setup.GameStart"/>
+        <check_value value="player.galaxy.macro == macro.vas_th_galaxy_macro"/>
+      </conditions>
+      <actions>
+        <!-- Unlock all player-buildable blueprints + paintmods so the shipyard is usable. -->
+        <run_actions ref="UnlockBlueprints"/>
+        <get_ware_definition tags="tag.paintmod" result="$Paintmods"/>
+        <do_all exact="$Paintmods.count" counter="$i">
+          <add_inventory ware="$Paintmods.{$i}" exact="1000"/>
+        </do_all>
+
+        <!-- Player home shipyard (operational, owned by the player), in the s01 home zone. -->
+        <find_zone name="$HomeZone" macro="macro.zone_vas_th_s01_home_macro"/>
+        <do_if value="$HomeZone">
+          <create_station name="$Home" macro="macro.station_gen_factory_base_01_macro" owner="faction.player" zone="$HomeZone"
+                          rawname="'EPAI Test Harness HQ'" state="componentstate.operational" constructionplan="'vas_th_player_shipfactory'">
+            <position x="0" y="0" z="0"/>
+          </create_station>
+          <create_control_entity name="$HomeMgr" object="$Home" post="controlpost.manager">
+            <select tags="controlpost.manager.tag"/>
+            <owner exact="$Home.owner"/>
+          </create_control_entity>
+          <set_skill entity="$HomeMgr" type="skilltype.management" exact="15"/>
+          <set_skill entity="$HomeMgr" type="skilltype.morale" exact="15"/>
+          <create_control_entity name="$HomeTrader" object="$Home" post="controlpost.shiptrader">
+            <select tags="controlpost.shiptrader.tag"/>
+            <owner exact="$Home.owner"/>
+          </create_control_entity>
+          <add_default_production_wares object="$Home" lowerlimit="100" upperlimit="100"/>
+          <add_workforce object="$Home" race="race.argon" exact="100000"/>
+          <add_units object="$Home" category="unitcategory.build" mk="1" exact="$Home.units.maxcount"/>
+          <set_known object="$Home" known="true" updatesnapshot="true"/>
+        </do_if>
+
+        <!-- Station targets, per the test plan (TECH_README):
+               s02 ARG vs TER Defence Stations     = Terran MILITARY stations  -> 2x armed defence platform
+               s04 ARG vs TER Civil Stations       = Terran CIVIL stations      -> 2x unarmed civil (no turrets)
+               s05 Player vs PAR Defence Stations  = Paranid MILITARY stations  -> 2x armed defence platform
+               s25 Station Route Waypointing       = Terran MILITARY stations  -> route blockers + far target
+               s06 Player vs PAR Civil Stations    = Paranid CIVIL stations     -> 2x unarmed civil (no turrets)
+             Civil-SHIP sectors (s03 ARG vs TER Civil Ships, s08 Player vs PAR Civil Ships) get NO station.
+             Plans:
+               'vas_th_defence_platform' = armed (turrets + shields).
+               'arg_mining_outpost'      = vanilla civil plan, ZERO weapons/shields.
+             Module race is cosmetic; ownership/hostility is what the AI keys on. -->
+        <set_value name="$Targets" exact="[
+          table[$zone=macro.zone_vas_th_s02_terranstation_macro, $owner=faction.terran,  $race=race.terran,  $plan='vas_th_defence_platform', $px=8000,   $py=0, $pz=8000,   $name='TH Terran Defence Outpost (s02 A)'],
+          table[$zone=macro.zone_vas_th_s02_terranstation_macro, $owner=faction.terran,  $race=race.terran,  $plan='vas_th_defence_platform', $px=-8000,  $py=0, $pz=-8000,  $name='TH Terran Defence Outpost (s02 B)'],
+          table[$zone=macro.zone_vas_th_s04_terranstation_macro, $owner=faction.terran,  $race=race.terran,  $plan='arg_mining_outpost',      $px=8000,   $py=0, $pz=8000,   $name='TH Terran Civil Station A (s04)'],
+          table[$zone=macro.zone_vas_th_s04_terranstation_macro, $owner=faction.terran,  $race=race.terran,  $plan='arg_mining_outpost',      $px=-8000,  $py=0, $pz=-8000,  $name='TH Terran Civil Station B (s04)'],
+          table[$zone=macro.zone_vas_th_s05_paranidstation_macro,$owner=faction.paranid, $race=race.paranid, $plan='vas_th_defence_platform', $px=8000,   $py=0, $pz=8000,   $name='TH Paranid Defence Outpost A (s05)'],
+          table[$zone=macro.zone_vas_th_s05_paranidstation_macro,$owner=faction.paranid, $race=race.paranid, $plan='vas_th_defence_platform', $px=-8000,  $py=0, $pz=-8000,  $name='TH Paranid Defence Outpost B (s05)'],
+          table[$zone=macro.zone_vas_th_s06_paranidstation_macro,$owner=faction.paranid, $race=race.paranid, $plan='arg_mining_outpost',      $px=8000,   $py=0, $pz=8000,   $name='TH Paranid Civil Station A (s06)'],
+          table[$zone=macro.zone_vas_th_s06_paranidstation_macro,$owner=faction.paranid, $race=race.paranid, $plan='arg_mining_outpost',      $px=-8000,  $py=0, $pz=-8000,  $name='TH Paranid Civil Station B (s06)'],
+
+          table[$zone=macro.zone_vas_th_station_waypoint_macro, $owner=faction.terran, $race=race.terran, $plan='vas_th_defence_platform', $px=8000,    $py=0,      $pz=8000,   $name='TH Terran Waypoint Blocker A (s25)'],
+          table[$zone=macro.zone_vas_th_station_waypoint_macro, $owner=faction.terran, $race=race.terran, $plan='vas_th_defence_platform', $px=-8000,   $py=0,      $pz=-8000,  $name='TH Terran Waypoint Blocker B (s25)'],
+          table[$zone=macro.zone_vas_th_station_waypoint_macro, $owner=faction.terran, $race=race.terran, $plan='vas_th_defence_platform', $px=0,       $py=30000,  $pz=0,      $name='TH Terran Waypoint Blocker +Y (s25)'],
+          table[$zone=macro.zone_vas_th_station_waypoint_macro, $owner=faction.terran, $race=race.terran, $plan='vas_th_defence_platform', $px=0,       $py=0,      $pz=-30000, $name='TH Terran Waypoint Blocker -Z (s25)'],
+          table[$zone=macro.zone_vas_th_station_waypoint_macro, $owner=faction.terran, $race=race.terran, $plan='vas_th_defence_platform', $px=0,       $py=-30000, $pz=0,      $name='TH Terran Waypoint Blocker -Y (s25)'],
+          table[$zone=macro.zone_vas_th_station_waypoint_macro, $owner=faction.terran, $race=race.terran, $plan='vas_th_defence_platform', $px=100000,  $py=0,      $pz=20000,  $name='TH Terran Waypoint Left Trap (s25)'],
+          table[$zone=macro.zone_vas_th_station_waypoint_macro, $owner=faction.terran, $race=race.terran, $plan='vas_th_defence_platform', $px=200000,  $py=0,      $pz=0,      $name='TH Terran Waypoint Joint Target (s25)']
+        ]"/>
+        <do_for_each name="$t" in="$Targets">
+          <find_zone name="$TZone" macro="$t.$zone"/>
+          <do_if value="$TZone">
+            <create_station name="$TStation" macro="macro.station_gen_factory_base_01_macro" owner="$t.$owner" zone="$TZone"
+                            rawname="$t.$name" state="componentstate.operational" constructionplan="$t.$plan">
+              <position x="$t.$px" y="$t.$py" z="$t.$pz"/>
+            </create_station>
+            <create_control_entity name="$TMgr" object="$TStation" post="controlpost.manager">
+              <select tags="controlpost.manager.tag"/>
+              <owner exact="$TStation.owner"/>
+            </create_control_entity>
+            <set_skill entity="$TMgr" type="skilltype.management" exact="12"/>
+            <add_workforce object="$TStation" race="$t.$race" exact="500"/>
+            <set_known object="$TStation" known="true" updatesnapshot="true"/>
+            <set_object_scanned object="$TStation"/>
+            <do_if value="$t.$name == 'TH Terran Waypoint Joint Target (s25)'">
+              <set_value name="global.$vas_th_s25_waypoint_joint_target" exact="$TStation"/>
+            </do_if>
+          </do_if>
+        </do_for_each>
+
+        <debug_text text="'[VAS_EPAI_TestHarness] game-start setup done: blueprints + player HQ + ' + $Targets.count + ' station targets (defence + civil)'" chance="100"/>
+      </actions>
+    </cue>
+
+    <!-- Re-add blueprints on every load (in case the player installs new ware mods). -->
+    <cue name="ReloadBlueprints" instantiate="true">
+      <conditions>
+        <event_game_loaded/>
+        <check_value value="player.galaxy.macro == macro.vas_th_galaxy_macro"/>
+      </conditions>
+      <actions>
+        <run_actions ref="UnlockBlueprints"/>
+      </actions>
+    </cue>
+
+    <library name="UnlockBlueprints" purpose="run_actions">
+      <actions>
+        <get_factions_by_tag tag="tag.economic" result="$BPFactions"/>
+        <get_ware_definition flags="allowplayerblueprint" faction="$BPFactions" tags="tag.module"    result="$MBlueprints"/>
+        <get_ware_definition flags="allowplayerblueprint" faction="$BPFactions" tags="tag.equipment" result="$EBlueprints"/>
+        <get_ware_definition flags="allowplayerblueprint" faction="$BPFactions" tags="tag.ship"      result="$SBlueprints"/>
+        <add_blueprints wares="$MBlueprints"/>
+        <add_blueprints wares="$SBlueprints"/>
+        <add_blueprints wares="$EBlueprints"/>
+      </actions>
+    </library>
+
+    <!-- ============================================================ -->
+    <!-- 4. ADVANCED SATELLITES (one per faction per sector)          -->
+    <!-- Non-instantiate: fires exactly once per playthrough.         -->
+    <!-- ============================================================ -->
+    <cue name="PlaceSatellites">
+      <conditions>
+        <event_universe_generated/>
+        <check_value value="player.galaxy.macro == macro.vas_th_galaxy_macro"/>
+      </conditions>
+      <actions>
+        <do_for_each name="$satZone" in="[
+          macro.zone_vas_th_s01_argonforce_macro,
+          macro.zone_vas_th_s02_argonforce_macro,
+          macro.zone_vas_th_s03_argonforce_macro,
+          macro.zone_vas_th_s04_argonforce_macro,
+          macro.zone_vas_th_s05_playerforce_macro,
+          macro.zone_vas_th_s06_playerforce_macro,
+          macro.zone_vas_th_s07_playerforce_macro,
+          macro.zone_vas_th_s08_playerforce_macro,
+          macro.zone_vas_th_station_waypoint_macro
+        ]">
+          <find_zone name="$SatZ" macro="$satZone"/>
+          <do_if value="$SatZ">
+            <!-- Offset toward the sector midpoint (the other force/station zone is +300km z away);
+                 800km radar covers the whole battle area regardless. -->
+            <create_object name="$SArg" macro="macro.vas_th_satellite_800km_macro" zone="$SatZ" owner="faction.argon"><position x="10km" y="0" z="90km"/></create_object>
+            <create_object name="$STer" macro="macro.vas_th_satellite_800km_macro" zone="$SatZ" owner="faction.terran"><position x="-10km" y="0" z="90km"/></create_object>
+            <create_object name="$SPly" macro="macro.vas_th_satellite_800km_macro" zone="$SatZ" owner="faction.player"><position x="0" y="0" z="100km"/></create_object>
+            <create_object name="$SPar" macro="macro.vas_th_satellite_800km_macro" zone="$SatZ" owner="faction.paranid"><position x="0" y="0" z="80km"/></create_object>
+          </do_if>
+        </do_for_each>
+        <debug_text text="'[VAS_EPAI_TestHarness] long-range test satellites placed in configured combat sectors'" chance="100"/>
+      </actions>
+    </cue>
+
+    <!-- ============================================================ -->
+    <!-- 5. PLAYER FORCE REASSIGNMENT                                  -->
+    <!-- Player-attacker forces spawn as ANTIGONE (Argon designs) via  -->
+    <!-- jobs, then are reassigned to the player here. Loops every 10s  -->
+    <!-- so battle replenishments are continually converted.           -->
+    <!-- ============================================================ -->
+    <cue name="ReassignPlayerForces">
+      <conditions>
+        <event_universe_generated/>
+        <check_value value="player.galaxy.macro == macro.vas_th_galaxy_macro"/>
+      </conditions>
+      <cues>
+        <cue name="Tick">
+          <delay exact="10s"/>
+          <actions>
+            <run_actions ref="DoReassignPlayer"/>
+            <reset_cue cue="Tick"/>
+          </actions>
+        </cue>
+      </cues>
+    </cue>
+
+    <library name="DoReassignPlayer" purpose="run_actions">
+      <actions>
+        <set_value name="$sectorMacros" exact="[
+          macro.vas_th_sector05_macro,
+          macro.vas_th_sector06_macro,
+          macro.vas_th_sector07_macro,
+          macro.vas_th_sector08_macro
+        ]"/>
+        <do_for_each name="$sm" in="$sectorMacros">
+          <find_sector name="$Sec" macro="$sm"/>
+          <do_if value="$Sec">
+            <find_ship name="$Ships" space="$Sec" recursive="true" multiple="true"/>
+            <do_for_each name="$s" in="$Ships">
+              <do_if value="$s.owner == faction.antigone">
+                <set_owner object="$s" faction="faction.player" overridenpc="true"/>
+                <!-- Re-issue Patrol only on top commanders we just converted; subordinates follow. -->
+                <do_if value="not @$s.commander">
+                  <create_order id="'Patrol'" object="$s">
+                    <param name="range" value="class.zone"/>
+                  </create_order>
+                </do_if>
+              </do_if>
+            </do_for_each>
+          </do_if>
+        </do_for_each>
+      </actions>
+    </library>
+
+  </cues>
+</mdscript>

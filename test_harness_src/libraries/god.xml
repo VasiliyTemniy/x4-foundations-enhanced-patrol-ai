@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Enhanced Patrol AI - Test Harness.
+  No god-placed stations: every station is created operational at runtime in
+  md/vas_epai_test_harness.xml (the only method proven to make them appear).
+  An empty gamestart dataset keeps the default god economy out of this start.
+-->
+<diff xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="diff.xsd">
+  <add sel="/god">
+    <gamestart ref="vas_epai_th_gamestart">
+    </gamestart>
+  </add>
+</diff>
