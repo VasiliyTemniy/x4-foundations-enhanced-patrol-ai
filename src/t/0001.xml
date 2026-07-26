@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<language>
+  <page id="2026062101"  title="[VAS] Enhanced Patrol AI" descr="0" voice="no">
+		<t id="100">Enhanced Patrol AI</t>
+		<t id="101">Use Enhanced Patrol AI</t>
+		<t id="1000">Apply to NPC factions</t>
+		<t id="1001">Apply to Xenon</t>
+		<t id="1002">Apply to Kha'ak</t>
+		<t id="1003">Attack ships</t>
+		<t id="1004">Attack stations</t>
+    <!-- TODO!!! Will have to add clarifying tooltips for these two -->
+		<t id="1005">Bypass civilian ship attack restriction</t>
+		<t id="1006">Bypass civilian station attack restriction</t>
+		<t id="1007">All-seeing - ignore own line of sight</t>
+		<t id="1008">Use allied shared vision, not only same faction</t>
+		<t id="1009">Scan interval</t>
+		<t id="1010">Max pursuit travelled distance</t>
+		<t id="1018">Max attack initiation distance</t>
+		<t id="1019">Max station-avoidance waypoints</t>
+    <t id="1011">Ship join threshold</t>
+		<t id="1012">Ship overcommit limit</t>
+		<t id="1013">Station assault join threshold</t>
+		<t id="1014">Station assault init threshold</t>
+		<t id="1015">Pending patrol force coefficient</t>
+		<t id="1016">Debug logging</t>
+		<t id="1017">Force estimation deviation</t>
+	</page>
+</language>

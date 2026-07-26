@@ -1,0 +1,568 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mdscript name="VAS_EnhancedPatrolAI_Config" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="md.xsd">
+  <!--
+    Config state + Extension Options UI for Enhanced Patrol AI. The gameplay
+    lives in aiscripts; they read the player.entity.$vas_epai_* mirrors, which
+    are re-pushed from ModConfig on every load by InitDefaults.
+  -->
+  <cues>
+    <!-- Config STATE container. Defaults live in exactly one place: SeedDefaults. -->
+    <cue name="ModConfig" namespace="this">
+      <actions>
+        <run_actions ref="SeedDefaults"/>
+      </actions>
+    </cue>
+
+    <!--@doc
+        Idempotent defaults seeder. String-coercion null checks: explicit
+        false/0 must NOT be re-seeded. -->
+    <library name="SeedDefaults" purpose="run_actions">
+      <actions>
+        <set_value name="$defaults" exact="table[
+          $applyToNpcFactions = true,
+          $applyToXenon = false,
+          $applyToKhaak = false,
+          $attackShips = true,
+          $attackStations = true,
+          $skipShipMayattack = false,
+          $skipStationMayattack = true,
+          $allSeeing = false,
+          $alliedVision = true,
+          $intervalSec = 30,
+          $maxPursueTravelDistanceKm = 800,
+          $maxAttackInitDistanceKm = 800,
+          $approachMaxWaypoints = 4,
+          $shipJoinThresholdPct = 10,
+          $shipOvercommitLimit = 10,
+          $stationJoinThresholdPct = 3,
+          $stationInitiationThresholdPct = 15,
+          $pendingPatrolForceCoeffPct = 50,
+          $forceEstimationDeviationPct = 10,
+          $debugEnabled = false,
+        ]"/>
+        <do_for_each name="$key" in="$defaults.keys.list">
+          <do_if value="(@md.VAS_EnhancedPatrolAI_Config.ModConfig.{$key} + '') == 'null'">
+            <set_value name="md.VAS_EnhancedPatrolAI_Config.ModConfig.{$key}" exact="$defaults.{$key}"/>
+          </do_if>
+        </do_for_each>
+      </actions>
+    </library>
+
+    <!-- event_universe_generated fires both at new-game start AND on every
+         savegame load (md.xsd), so it alone covers all sessions. Seeds defaults
+         and re-pushes all aiscript blackboard mirrors (with unit conversions). -->
+    <cue name="InitDefaults" instantiate="true">
+      <conditions>
+        <event_universe_generated/>
+      </conditions>
+      <actions>
+        <run_actions ref="SeedDefaults"/>
+        <!-- Shared hardcoded force-model baselines for AIScript helpers and station force. -->
+        <set_value name="global.$vas_epai_ship_force_baselines" exact="table[
+          $dps = 5000hp,
+          $durability = 250000hp,
+          $maxspeed_cruise = 120m,
+          $maxspeed_travel = 4000m,
+          $travel_chargetime = 8s,
+          $mobility_cruise_weight = 0.7,
+          $mobility_travel_weight = 0.3
+        ]"/>
+        <run_actions ref="PushMirrors"/>
+      </actions>
+    </cue>
+
+    <!--@doc
+        Pushes every ModConfig value onto the player blackboard in the units the
+        aiscripts consume directly (time, distance, ratios). -->
+    <library name="PushMirrors" purpose="run_actions">
+      <actions>
+        <set_value name="player.entity.$vas_epai_apply_to_npc_factions" exact="md.VAS_EnhancedPatrolAI_Config.ModConfig.$applyToNpcFactions"/>
+        <set_value name="player.entity.$vas_epai_apply_to_xenon" exact="md.VAS_EnhancedPatrolAI_Config.ModConfig.$applyToXenon"/>
+        <set_value name="player.entity.$vas_epai_apply_to_khaak" exact="md.VAS_EnhancedPatrolAI_Config.ModConfig.$applyToKhaak"/>
+        <set_value name="player.entity.$vas_epai_attack_ships" exact="md.VAS_EnhancedPatrolAI_Config.ModConfig.$attackShips"/>
+        <set_value name="player.entity.$vas_epai_attack_stations" exact="md.VAS_EnhancedPatrolAI_Config.ModConfig.$attackStations"/>
+        <set_value name="player.entity.$vas_epai_skip_ship_mayattack" exact="md.VAS_EnhancedPatrolAI_Config.ModConfig.$skipShipMayattack"/>
+        <set_value name="player.entity.$vas_epai_skip_station_mayattack" exact="md.VAS_EnhancedPatrolAI_Config.ModConfig.$skipStationMayattack"/>
+        <set_value name="player.entity.$vas_epai_all_seeing" exact="md.VAS_EnhancedPatrolAI_Config.ModConfig.$allSeeing"/>
+        <set_value name="player.entity.$vas_epai_allied_vision" exact="md.VAS_EnhancedPatrolAI_Config.ModConfig.$alliedVision"/>
+        <set_value name="player.entity.$vas_epai_debug_chance" exact="if md.VAS_EnhancedPatrolAI_Config.ModConfig.$debugEnabled then 100 else 0"/>
+        <set_value name="player.entity.$vas_epai_interval" exact="md.VAS_EnhancedPatrolAI_Config.ModConfig.$intervalSec * 1s"/>
+        <set_value name="player.entity.$vas_epai_max_pursue_travel_distance" exact="md.VAS_EnhancedPatrolAI_Config.ModConfig.$maxPursueTravelDistanceKm * 1km"/>
+        <set_value name="player.entity.$vas_epai_max_attack_init_distance" exact="md.VAS_EnhancedPatrolAI_Config.ModConfig.$maxAttackInitDistanceKm * 1km"/>
+        <set_value name="player.entity.$vas_epai_approach_max_waypoints" exact="md.VAS_EnhancedPatrolAI_Config.ModConfig.$approachMaxWaypoints"/>
+        <set_value name="player.entity.$vas_epai_ship_join_threshold" exact="md.VAS_EnhancedPatrolAI_Config.ModConfig.$shipJoinThresholdPct / 100.0"/>
+        <set_value name="player.entity.$vas_epai_ship_overcommit_limit" exact="md.VAS_EnhancedPatrolAI_Config.ModConfig.$shipOvercommitLimit"/>
+        <set_value name="player.entity.$vas_epai_station_join_threshold" exact="md.VAS_EnhancedPatrolAI_Config.ModConfig.$stationJoinThresholdPct / 100.0"/>
+        <set_value name="player.entity.$vas_epai_station_initiation_threshold" exact="md.VAS_EnhancedPatrolAI_Config.ModConfig.$stationInitiationThresholdPct / 100.0"/>
+        <set_value name="player.entity.$vas_epai_pending_patrol_force_coefficient" exact="md.VAS_EnhancedPatrolAI_Config.ModConfig.$pendingPatrolForceCoeffPct / 100.0"/>
+        <set_value name="player.entity.$vas_epai_force_estimation_deviation" exact="md.VAS_EnhancedPatrolAI_Config.ModConfig.$forceEstimationDeviationPct / 100.0"/>
+      </actions>
+    </library>
+
+    <cue name="StartSMO" instantiate="true">
+      <conditions>
+        <event_cue_signalled cue="md.Simple_Menu_Options.Reloaded"/>
+      </conditions>
+      <actions>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Register_Options_Menu" param="table[
+          $id = 'vas_epai_options_menu',
+          $columns = 3,
+          $title = {2026062101,100},
+          $onOpen = BuildOptionsMenu,
+        ]"/>
+        <cancel_cue cue="this"/>
+      </actions>
+    </cue>
+
+    <cue name="BuildOptionsMenu" instantiate="true">
+      <conditions>
+        <event_cue_signalled/>
+      </conditions>
+      <actions>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Call_Table_Method" param="table[
+          $method = 'setColWidth',
+          $col = 1,
+          $width = 'Helper.standardButtonHeight',
+        ]"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Call_Table_Method" param="table[
+          $method = 'setColWidth',
+          $col = 2,
+          $width = 250,
+        ]"/>
+
+        <signal_cue_instantly cue="md.Simple_Menu_API.Add_Row"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_CheckBox" param="table[
+          $id = 'applyToNpcFactions',
+          $checked = @md.VAS_EnhancedPatrolAI_Config.ModConfig.$applyToNpcFactions,
+          $col = 1,
+          $width = 'Helper.standardButtonHeight',
+          $height = 'Helper.standardButtonHeight',
+          $onClick = OnOptionsCheckboxChanged,
+        ]"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Text" param="table[
+          $col = 2,
+          $colSpan = 2,
+          $text = {2026062101,1000},
+        ]"/>
+
+        <signal_cue_instantly cue="md.Simple_Menu_API.Add_Row"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_CheckBox" param="table[
+          $id = 'applyToXenon',
+          $checked = @md.VAS_EnhancedPatrolAI_Config.ModConfig.$applyToXenon,
+          $col = 1,
+          $width = 'Helper.standardButtonHeight',
+          $height = 'Helper.standardButtonHeight',
+          $onClick = OnOptionsCheckboxChanged,
+        ]"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Text" param="table[
+          $col = 2,
+          $colSpan = 2,
+          $text = {2026062101,1001},
+        ]"/>
+
+        <signal_cue_instantly cue="md.Simple_Menu_API.Add_Row"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_CheckBox" param="table[
+          $id = 'applyToKhaak',
+          $checked = @md.VAS_EnhancedPatrolAI_Config.ModConfig.$applyToKhaak,
+          $col = 1,
+          $width = 'Helper.standardButtonHeight',
+          $height = 'Helper.standardButtonHeight',
+          $onClick = OnOptionsCheckboxChanged,
+        ]"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Text" param="table[
+          $col = 2,
+          $colSpan = 2,
+          $text = {2026062101,1002},
+        ]"/>
+
+        <signal_cue_instantly cue="md.Simple_Menu_API.Add_Row"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_CheckBox" param="table[
+          $id = 'attackShips',
+          $checked = @md.VAS_EnhancedPatrolAI_Config.ModConfig.$attackShips,
+          $col = 1,
+          $width = 'Helper.standardButtonHeight',
+          $height = 'Helper.standardButtonHeight',
+          $onClick = OnOptionsCheckboxChanged,
+        ]"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Text" param="table[
+          $col = 2,
+          $colSpan = 2,
+          $text = {2026062101,1003},
+        ]"/>
+
+        <signal_cue_instantly cue="md.Simple_Menu_API.Add_Row"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_CheckBox" param="table[
+          $id = 'attackStations',
+          $checked = @md.VAS_EnhancedPatrolAI_Config.ModConfig.$attackStations,
+          $col = 1,
+          $width = 'Helper.standardButtonHeight',
+          $height = 'Helper.standardButtonHeight',
+          $onClick = OnOptionsCheckboxChanged,
+        ]"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Text" param="table[
+          $col = 2,
+          $colSpan = 2,
+          $text = {2026062101,1004},
+        ]"/>
+
+        <signal_cue_instantly cue="md.Simple_Menu_API.Add_Row"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_CheckBox" param="table[
+          $id = 'skipShipMayattack',
+          $checked = @md.VAS_EnhancedPatrolAI_Config.ModConfig.$skipShipMayattack,
+          $col = 1,
+          $width = 'Helper.standardButtonHeight',
+          $height = 'Helper.standardButtonHeight',
+          $onClick = OnOptionsCheckboxChanged,
+        ]"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Text" param="table[
+          $col = 2,
+          $colSpan = 2,
+          $text = {2026062101,1005},
+        ]"/>
+
+        <signal_cue_instantly cue="md.Simple_Menu_API.Add_Row"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_CheckBox" param="table[
+          $id = 'skipStationMayattack',
+          $checked = @md.VAS_EnhancedPatrolAI_Config.ModConfig.$skipStationMayattack,
+          $col = 1,
+          $width = 'Helper.standardButtonHeight',
+          $height = 'Helper.standardButtonHeight',
+          $onClick = OnOptionsCheckboxChanged,
+        ]"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Text" param="table[
+          $col = 2,
+          $colSpan = 2,
+          $text = {2026062101,1006},
+        ]"/>
+
+        <signal_cue_instantly cue="md.Simple_Menu_API.Add_Row"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_CheckBox" param="table[
+          $id = 'allSeeing',
+          $checked = @md.VAS_EnhancedPatrolAI_Config.ModConfig.$allSeeing,
+          $col = 1,
+          $width = 'Helper.standardButtonHeight',
+          $height = 'Helper.standardButtonHeight',
+          $onClick = OnOptionsCheckboxChanged,
+        ]"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Text" param="table[
+          $col = 2,
+          $colSpan = 2,
+          $text = {2026062101,1007},
+        ]"/>
+
+        <signal_cue_instantly cue="md.Simple_Menu_API.Add_Row"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_CheckBox" param="table[
+          $id = 'alliedVision',
+          $checked = @md.VAS_EnhancedPatrolAI_Config.ModConfig.$alliedVision,
+          $col = 1,
+          $width = 'Helper.standardButtonHeight',
+          $height = 'Helper.standardButtonHeight',
+          $onClick = OnOptionsCheckboxChanged,
+        ]"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Text" param="table[
+          $col = 2,
+          $colSpan = 2,
+          $text = {2026062101,1008},
+        ]"/>
+
+        <signal_cue_instantly cue="md.Simple_Menu_API.Add_Row"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Text" param="table[
+          $col = 1,
+          $colSpan = 2,
+          $text = {2026062101,1009},
+        ]"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Slider" param="table[
+          $col = 3,
+          $id = 'intervalSec',
+          $echo = 'intervalSec',
+          $height = 'Helper.slidercellMinHeight',
+          $min = 1,
+          $max = 60,
+          $step = 1,
+          $start = @md.VAS_EnhancedPatrolAI_Config.ModConfig.$intervalSec,
+          $suffix = ' s',
+          $onSliderCellConfirm = OnOptionsSliderChanged,
+        ]"/>
+
+        <signal_cue_instantly cue="md.Simple_Menu_API.Add_Row"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Text" param="table[
+          $col = 1,
+          $colSpan = 2,
+          $text = {2026062101,1010},
+        ]"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Slider" param="table[
+          $col = 3,
+          $id = 'maxPursueTravelDistanceKm',
+          $echo = 'maxPursueTravelDistanceKm',
+          $height = 'Helper.slidercellMinHeight',
+          $min = 50,
+          $max = 500000,
+          $step = 50,
+          $start = @md.VAS_EnhancedPatrolAI_Config.ModConfig.$maxPursueTravelDistanceKm,
+          $suffix = ' km',
+          $onSliderCellConfirm = OnOptionsSliderChanged,
+        ]"/>
+
+        <signal_cue_instantly cue="md.Simple_Menu_API.Add_Row"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Text" param="table[
+          $col = 1,
+          $colSpan = 2,
+          $text = {2026062101,1018},
+        ]"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Slider" param="table[
+          $col = 3,
+          $id = 'maxAttackInitDistanceKm',
+          $echo = 'maxAttackInitDistanceKm',
+          $height = 'Helper.slidercellMinHeight',
+          $min = 50,
+          $max = 500000,
+          $step = 50,
+          $start = @md.VAS_EnhancedPatrolAI_Config.ModConfig.$maxAttackInitDistanceKm,
+          $suffix = ' km',
+          $onSliderCellConfirm = OnOptionsSliderChanged,
+        ]"/>
+
+        <signal_cue_instantly cue="md.Simple_Menu_API.Add_Row"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Text" param="table[
+          $col = 1,
+          $colSpan = 2,
+          $text = {2026062101,1019},
+        ]"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Slider" param="table[
+          $col = 3,
+          $id = 'approachMaxWaypoints',
+          $echo = 'approachMaxWaypoints',
+          $height = 'Helper.slidercellMinHeight',
+          $min = 0,
+          $max = 10,
+          $step = 1,
+          $start = @md.VAS_EnhancedPatrolAI_Config.ModConfig.$approachMaxWaypoints,
+          $onSliderCellConfirm = OnOptionsSliderChanged,
+        ]"/>
+
+        <signal_cue_instantly cue="md.Simple_Menu_API.Add_Row"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Text" param="table[
+          $col = 1,
+          $colSpan = 2,
+          $text = {2026062101,1011},
+        ]"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Slider" param="table[
+          $col = 3,
+          $id = 'shipJoinThresholdPct',
+          $echo = 'shipJoinThresholdPct',
+          $height = 'Helper.slidercellMinHeight',
+          $min = 0,
+          $max = 100,
+          $step = 1,
+          $start = @md.VAS_EnhancedPatrolAI_Config.ModConfig.$shipJoinThresholdPct,
+          $suffix = ' %',
+          $onSliderCellConfirm = OnOptionsSliderChanged,
+        ]"/>
+
+        <signal_cue_instantly cue="md.Simple_Menu_API.Add_Row"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Text" param="table[
+          $col = 1,
+          $colSpan = 2,
+          $text = {2026062101,1012},
+        ]"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Slider" param="table[
+          $col = 3,
+          $id = 'shipOvercommitLimit',
+          $echo = 'shipOvercommitLimit',
+          $height = 'Helper.slidercellMinHeight',
+          $min = 1,
+          $max = 50,
+          $step = 1,
+          $start = @md.VAS_EnhancedPatrolAI_Config.ModConfig.$shipOvercommitLimit,
+          $suffix = ' x',
+          $onSliderCellConfirm = OnOptionsSliderChanged,
+        ]"/>
+
+        <signal_cue_instantly cue="md.Simple_Menu_API.Add_Row"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Text" param="table[
+          $col = 1,
+          $colSpan = 2,
+          $text = {2026062101,1013},
+        ]"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Slider" param="table[
+          $col = 3,
+          $id = 'stationJoinThresholdPct',
+          $echo = 'stationJoinThresholdPct',
+          $height = 'Helper.slidercellMinHeight',
+          $min = 0,
+          $max = 100,
+          $step = 1,
+          $start = @md.VAS_EnhancedPatrolAI_Config.ModConfig.$stationJoinThresholdPct,
+          $suffix = ' %',
+          $onSliderCellConfirm = OnOptionsSliderChanged,
+        ]"/>
+
+        <signal_cue_instantly cue="md.Simple_Menu_API.Add_Row"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Text" param="table[
+          $col = 1,
+          $colSpan = 2,
+          $text = {2026062101,1014},
+        ]"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Slider" param="table[
+          $col = 3,
+          $id = 'stationInitiationThresholdPct',
+          $echo = 'stationInitiationThresholdPct',
+          $height = 'Helper.slidercellMinHeight',
+          $min = 1,
+          $max = 100,
+          $step = 1,
+          $start = @md.VAS_EnhancedPatrolAI_Config.ModConfig.$stationInitiationThresholdPct,
+          $suffix = ' %',
+          $onSliderCellConfirm = OnOptionsSliderChanged,
+        ]"/>
+
+        <signal_cue_instantly cue="md.Simple_Menu_API.Add_Row"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Text" param="table[
+          $col = 1,
+          $colSpan = 2,
+          $text = {2026062101,1015},
+        ]"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Slider" param="table[
+          $col = 3,
+          $id = 'pendingPatrolForceCoeffPct',
+          $echo = 'pendingPatrolForceCoeffPct',
+          $height = 'Helper.slidercellMinHeight',
+          $min = 0,
+          $max = 100,
+          $step = 1,
+          $start = @md.VAS_EnhancedPatrolAI_Config.ModConfig.$pendingPatrolForceCoeffPct,
+          $suffix = ' %',
+          $onSliderCellConfirm = OnOptionsSliderChanged,
+        ]"/>
+
+        <signal_cue_instantly cue="md.Simple_Menu_API.Add_Row"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Text" param="table[
+          $col = 1,
+          $colSpan = 2,
+          $text = {2026062101,1017},
+        ]"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Slider" param="table[
+          $col = 3,
+          $id = 'forceEstimationDeviationPct',
+          $echo = 'forceEstimationDeviationPct',
+          $height = 'Helper.slidercellMinHeight',
+          $min = 0,
+          $max = 90,
+          $step = 1,
+          $start = @md.VAS_EnhancedPatrolAI_Config.ModConfig.$forceEstimationDeviationPct,
+          $suffix = ' %',
+          $onSliderCellConfirm = OnOptionsSliderChanged,
+        ]"/>
+
+        <signal_cue_instantly cue="md.Simple_Menu_API.Add_Row"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_CheckBox" param="table[
+          $id = 'debugEnabled',
+          $checked = @md.VAS_EnhancedPatrolAI_Config.ModConfig.$debugEnabled,
+          $col = 1,
+          $width = 'Helper.standardButtonHeight',
+          $height = 'Helper.standardButtonHeight',
+          $onClick = OnOptionsCheckboxChanged,
+        ]"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Text" param="table[
+          $col = 2,
+          $colSpan = 2,
+          $text = {2026062101,1016},
+        ]"/>
+      </actions>
+    </cue>
+
+    <cue name="OnOptionsCheckboxChanged" instantiate="true">
+      <conditions>
+        <event_cue_signalled/>
+      </conditions>
+      <actions>
+        <set_value name="md.VAS_EnhancedPatrolAI_Config.ModConfig.{'$' + event.param.$id}" exact="event.param.$checked"/>
+        <do_if value="event.param.$id == 'debugEnabled'">
+          <do_if value="event.param.$checked">
+            <set_value name="player.entity.$vas_epai_debug_chance" exact="100"/>
+          </do_if>
+          <do_else>
+            <set_value name="player.entity.$vas_epai_debug_chance" exact="0"/>
+          </do_else>
+        </do_if>
+        <do_elseif value="event.param.$id == 'applyToNpcFactions'">
+          <set_value name="player.entity.$vas_epai_apply_to_npc_factions" exact="event.param.$checked"/>
+        </do_elseif>
+        <do_elseif value="event.param.$id == 'applyToXenon'">
+          <set_value name="player.entity.$vas_epai_apply_to_xenon" exact="event.param.$checked"/>
+        </do_elseif>
+        <do_elseif value="event.param.$id == 'applyToKhaak'">
+          <set_value name="player.entity.$vas_epai_apply_to_khaak" exact="event.param.$checked"/>
+        </do_elseif>
+        <do_elseif value="event.param.$id == 'attackShips'">
+          <set_value name="player.entity.$vas_epai_attack_ships" exact="event.param.$checked"/>
+        </do_elseif>
+        <do_elseif value="event.param.$id == 'attackStations'">
+          <set_value name="player.entity.$vas_epai_attack_stations" exact="event.param.$checked"/>
+        </do_elseif>
+        <do_elseif value="event.param.$id == 'skipShipMayattack'">
+          <set_value name="player.entity.$vas_epai_skip_ship_mayattack" exact="event.param.$checked"/>
+        </do_elseif>
+        <do_elseif value="event.param.$id == 'skipStationMayattack'">
+          <set_value name="player.entity.$vas_epai_skip_station_mayattack" exact="event.param.$checked"/>
+        </do_elseif>
+        <do_elseif value="event.param.$id == 'allSeeing'">
+          <set_value name="player.entity.$vas_epai_all_seeing" exact="event.param.$checked"/>
+        </do_elseif>
+        <do_elseif value="event.param.$id == 'alliedVision'">
+          <set_value name="player.entity.$vas_epai_allied_vision" exact="event.param.$checked"/>
+        </do_elseif>
+        <cancel_cue cue="this"/>
+      </actions>
+    </cue>
+
+    <cue name="OnOptionsSliderChanged" instantiate="true">
+      <conditions>
+        <event_cue_signalled/>
+      </conditions>
+      <actions>
+        <do_if value="event.param.$echo == 'intervalSec'">
+          <set_value name="md.VAS_EnhancedPatrolAI_Config.ModConfig.$intervalSec" exact="event.param.$value"/>
+          <set_value name="player.entity.$vas_epai_interval" exact="event.param.$value * 1s"/>
+        </do_if>
+        <do_elseif value="event.param.$echo == 'maxPursueTravelDistanceKm'">
+          <set_value name="md.VAS_EnhancedPatrolAI_Config.ModConfig.$maxPursueTravelDistanceKm" exact="event.param.$value"/>
+          <set_value name="player.entity.$vas_epai_max_pursue_travel_distance" exact="event.param.$value * 1km"/>
+        </do_elseif>
+        <do_elseif value="event.param.$echo == 'maxAttackInitDistanceKm'">
+          <set_value name="md.VAS_EnhancedPatrolAI_Config.ModConfig.$maxAttackInitDistanceKm" exact="event.param.$value"/>
+          <set_value name="player.entity.$vas_epai_max_attack_init_distance" exact="event.param.$value * 1km"/>
+        </do_elseif>
+        <do_elseif value="event.param.$echo == 'approachMaxWaypoints'">
+          <set_value name="md.VAS_EnhancedPatrolAI_Config.ModConfig.$approachMaxWaypoints" exact="event.param.$value"/>
+          <set_value name="player.entity.$vas_epai_approach_max_waypoints" exact="event.param.$value"/>
+        </do_elseif>
+        <do_elseif value="event.param.$echo == 'shipJoinThresholdPct'">
+          <set_value name="md.VAS_EnhancedPatrolAI_Config.ModConfig.$shipJoinThresholdPct" exact="event.param.$value"/>
+          <set_value name="player.entity.$vas_epai_ship_join_threshold" exact="event.param.$value / 100.0"/>
+        </do_elseif>
+        <do_elseif value="event.param.$echo == 'shipOvercommitLimit'">
+          <set_value name="md.VAS_EnhancedPatrolAI_Config.ModConfig.$shipOvercommitLimit" exact="event.param.$value"/>
+          <set_value name="player.entity.$vas_epai_ship_overcommit_limit" exact="event.param.$value"/>
+        </do_elseif>
+        <do_elseif value="event.param.$echo == 'stationJoinThresholdPct'">
+          <set_value name="md.VAS_EnhancedPatrolAI_Config.ModConfig.$stationJoinThresholdPct" exact="event.param.$value"/>
+          <set_value name="player.entity.$vas_epai_station_join_threshold" exact="event.param.$value / 100.0"/>
+        </do_elseif>
+        <do_elseif value="event.param.$echo == 'stationInitiationThresholdPct'">
+          <set_value name="md.VAS_EnhancedPatrolAI_Config.ModConfig.$stationInitiationThresholdPct" exact="event.param.$value"/>
+          <set_value name="player.entity.$vas_epai_station_initiation_threshold" exact="event.param.$value / 100.0"/>
+        </do_elseif>
+        <do_elseif value="event.param.$echo == 'pendingPatrolForceCoeffPct'">
+          <set_value name="md.VAS_EnhancedPatrolAI_Config.ModConfig.$pendingPatrolForceCoeffPct" exact="event.param.$value"/>
+          <set_value name="player.entity.$vas_epai_pending_patrol_force_coefficient" exact="event.param.$value / 100.0"/>
+        </do_elseif>
+        <do_elseif value="event.param.$echo == 'forceEstimationDeviationPct'">
+          <set_value name="md.VAS_EnhancedPatrolAI_Config.ModConfig.$forceEstimationDeviationPct" exact="event.param.$value"/>
+          <set_value name="player.entity.$vas_epai_force_estimation_deviation" exact="event.param.$value / 100.0"/>
+        </do_elseif>
+        <cancel_cue cue="this"/>
+      </actions>
+    </cue>
+  </cues>
+</mdscript>

@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mdscript name="VAS_EnhancedPatrolAI_GarbageCollector" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="md.xsd">
+  <cues>
+    <cue name="CollectExpiredCaches" checkinterval="60" instantiate="true">
+      <actions>
+        <!-- VFF branch flatlist cache: first-level key is viewing/owning faction; second-level key is VFF. -->
+        <do_if value="@global.$vas_epai_vffbranch_cache">
+          <!-- Collect faction keys separately so the root table is not modified during traversal. -->
+          <set_value name="$vas_epai_expired_vffbranch_factions" exact="[]"/>
+          <do_all exact="global.$vas_epai_vffbranch_cache.keys.count" counter="$i">
+            <set_value name="$vas_epai_vffbranch_faction" exact="global.$vas_epai_vffbranch_cache.keys.list.{$i}"/>
+            <set_value name="$vas_epai_expired_vffbranch_vffs" exact="[]"/>
+            <!-- Keep entries a few seconds past expiry so scan bodies can finish reading preprocessed cache. -->
+            <do_all exact="global.$vas_epai_vffbranch_cache.{$vas_epai_vffbranch_faction}.keys.count" counter="$j">
+              <set_value name="$vas_epai_vffbranch_vff" exact="global.$vas_epai_vffbranch_cache.{$vas_epai_vffbranch_faction}.keys.list.{$j}"/>
+              <do_if value="global.$vas_epai_vffbranch_cache.{$vas_epai_vffbranch_faction}.{$vas_epai_vffbranch_vff}.$expiry + 3s le player.age">
+                <append_to_list name="$vas_epai_expired_vffbranch_vffs" exact="$vas_epai_vffbranch_vff"/>
+              </do_if>
+            </do_all>
+            <!-- Prune expired VFFs, then mark an empty faction map for removal. -->
+            <do_all exact="$vas_epai_expired_vffbranch_vffs.count" counter="$j">
+              <remove_value name="global.$vas_epai_vffbranch_cache.{$vas_epai_vffbranch_faction}.{$vas_epai_expired_vffbranch_vffs.{$j}}"/>
+            </do_all>
+            <do_if value="global.$vas_epai_vffbranch_cache.{$vas_epai_vffbranch_faction}.keys.count == 0">
+              <append_to_list name="$vas_epai_expired_vffbranch_factions" exact="$vas_epai_vffbranch_faction"/>
+            </do_if>
+          </do_all>
+          <!-- Remove faction maps that became empty. -->
+          <do_all exact="$vas_epai_expired_vffbranch_factions.count" counter="$i">
+            <remove_value name="global.$vas_epai_vffbranch_cache.{$vas_epai_expired_vffbranch_factions.{$i}}"/>
+          </do_all>
+        </do_if>
+
+        <!-- Fleet force cache: first-level key is viewing faction; second-level key is VFF. -->
+        <do_if value="@global.$vas_epai_fleetforce_cache">
+          <!-- Collect faction keys separately so the root table is not modified during traversal. -->
+          <set_value name="$vas_epai_expired_fleetforce_factions" exact="[]"/>
+          <do_all exact="global.$vas_epai_fleetforce_cache.keys.count" counter="$i">
+            <set_value name="$vas_epai_fleetforce_faction" exact="global.$vas_epai_fleetforce_cache.keys.list.{$i}"/>
+            <set_value name="$vas_epai_expired_fleetforce_vffs" exact="[]"/>
+            <!-- Collect expired VFF keys for this viewing faction. -->
+            <do_all exact="global.$vas_epai_fleetforce_cache.{$vas_epai_fleetforce_faction}.keys.count" counter="$j">
+              <set_value name="$vas_epai_fleetforce_vff" exact="global.$vas_epai_fleetforce_cache.{$vas_epai_fleetforce_faction}.keys.list.{$j}"/>
+              <do_if value="global.$vas_epai_fleetforce_cache.{$vas_epai_fleetforce_faction}.{$vas_epai_fleetforce_vff}.$expiry + 3s le player.age">
+                <append_to_list name="$vas_epai_expired_fleetforce_vffs" exact="$vas_epai_fleetforce_vff"/>
+              </do_if>
+            </do_all>
+            <!-- Prune expired VFFs, then mark an empty faction map for removal. -->
+            <do_all exact="$vas_epai_expired_fleetforce_vffs.count" counter="$j">
+              <remove_value name="global.$vas_epai_fleetforce_cache.{$vas_epai_fleetforce_faction}.{$vas_epai_expired_fleetforce_vffs.{$j}}"/>
+            </do_all>
+            <do_if value="global.$vas_epai_fleetforce_cache.{$vas_epai_fleetforce_faction}.keys.count == 0">
+              <append_to_list name="$vas_epai_expired_fleetforce_factions" exact="$vas_epai_fleetforce_faction"/>
+            </do_if>
+          </do_all>
+          <!-- Remove faction maps that became empty. -->
+          <do_all exact="$vas_epai_expired_fleetforce_factions.count" counter="$i">
+            <remove_value name="global.$vas_epai_fleetforce_cache.{$vas_epai_expired_fleetforce_factions.{$i}}"/>
+          </do_all>
+        </do_if>
+
+        <!-- Ship visibility cache: first-level key is viewing faction; second-level key is target ship. -->
+        <do_if value="@global.$vas_epai_shipvisibility_cache">
+          <!-- Collect faction keys separately so the root table is not modified during traversal. -->
+          <set_value name="$vas_epai_expired_shipvisibility_factions" exact="[]"/>
+          <do_all exact="global.$vas_epai_shipvisibility_cache.keys.count" counter="$i">
+            <set_value name="$vas_epai_shipvisibility_faction" exact="global.$vas_epai_shipvisibility_cache.keys.list.{$i}"/>
+            <set_value name="$vas_epai_expired_shipvisibility_targets" exact="[]"/>
+            <!-- Collect expired target-ship keys for this viewing faction. -->
+            <do_all exact="global.$vas_epai_shipvisibility_cache.{$vas_epai_shipvisibility_faction}.keys.count" counter="$j">
+              <set_value name="$vas_epai_shipvisibility_target" exact="global.$vas_epai_shipvisibility_cache.{$vas_epai_shipvisibility_faction}.keys.list.{$j}"/>
+              <do_if value="global.$vas_epai_shipvisibility_cache.{$vas_epai_shipvisibility_faction}.{$vas_epai_shipvisibility_target}.$expiry + 3s le player.age">
+                <append_to_list name="$vas_epai_expired_shipvisibility_targets" exact="$vas_epai_shipvisibility_target"/>
+              </do_if>
+            </do_all>
+            <!-- Prune expired targets, then mark an empty faction map for removal. -->
+            <do_all exact="$vas_epai_expired_shipvisibility_targets.count" counter="$j">
+              <remove_value name="global.$vas_epai_shipvisibility_cache.{$vas_epai_shipvisibility_faction}.{$vas_epai_expired_shipvisibility_targets.{$j}}"/>
+            </do_all>
+            <do_if value="global.$vas_epai_shipvisibility_cache.{$vas_epai_shipvisibility_faction}.keys.count == 0">
+              <append_to_list name="$vas_epai_expired_shipvisibility_factions" exact="$vas_epai_shipvisibility_faction"/>
+            </do_if>
+          </do_all>
+          <!-- Remove faction maps that became empty. -->
+          <do_all exact="$vas_epai_expired_shipvisibility_factions.count" counter="$i">
+            <remove_value name="global.$vas_epai_shipvisibility_cache.{$vas_epai_expired_shipvisibility_factions.{$i}}"/>
+          </do_all>
+        </do_if>
+
+        <!-- Station visibility cache: first-level key is viewing faction; second-level key is target station. -->
+        <do_if value="@global.$vas_epai_stationvisibility_cache">
+          <!-- Collect faction keys separately so the root table is not modified during traversal. -->
+          <set_value name="$vas_epai_expired_stationvisibility_factions" exact="[]"/>
+          <do_all exact="global.$vas_epai_stationvisibility_cache.keys.count" counter="$i">
+            <set_value name="$vas_epai_stationvisibility_faction" exact="global.$vas_epai_stationvisibility_cache.keys.list.{$i}"/>
+            <set_value name="$vas_epai_expired_stationvisibility_targets" exact="[]"/>
+            <!-- Collect expired target-station keys for this viewing faction. -->
+            <do_all exact="global.$vas_epai_stationvisibility_cache.{$vas_epai_stationvisibility_faction}.keys.count" counter="$j">
+              <set_value name="$vas_epai_stationvisibility_target" exact="global.$vas_epai_stationvisibility_cache.{$vas_epai_stationvisibility_faction}.keys.list.{$j}"/>
+              <do_if value="global.$vas_epai_stationvisibility_cache.{$vas_epai_stationvisibility_faction}.{$vas_epai_stationvisibility_target}.$expiry + 3s le player.age">
+                <append_to_list name="$vas_epai_expired_stationvisibility_targets" exact="$vas_epai_stationvisibility_target"/>
+              </do_if>
+            </do_all>
+            <!-- Prune expired targets, then mark an empty faction map for removal. -->
+            <do_all exact="$vas_epai_expired_stationvisibility_targets.count" counter="$j">
+              <remove_value name="global.$vas_epai_stationvisibility_cache.{$vas_epai_stationvisibility_faction}.{$vas_epai_expired_stationvisibility_targets.{$j}}"/>
+            </do_all>
+            <do_if value="global.$vas_epai_stationvisibility_cache.{$vas_epai_stationvisibility_faction}.keys.count == 0">
+              <append_to_list name="$vas_epai_expired_stationvisibility_factions" exact="$vas_epai_stationvisibility_faction"/>
+            </do_if>
+          </do_all>
+          <!-- Remove faction maps that became empty. -->
+          <do_all exact="$vas_epai_expired_stationvisibility_factions.count" counter="$i">
+            <remove_value name="global.$vas_epai_stationvisibility_cache.{$vas_epai_expired_stationvisibility_factions.{$i}}"/>
+          </do_all>
+        </do_if>
+
+        <!-- Patrol-start follow-up marker: key is the ship that should rescan after its EPAI attack finishes. -->
+        <do_if value="@global.$vas_epai_should_scan_at_patrol_start">
+          <set_value name="$vas_epai_dead_patrol_start_marker_ships" exact="[]"/>
+          <do_all exact="global.$vas_epai_should_scan_at_patrol_start.keys.count" counter="$i">
+            <set_value name="$vas_epai_patrol_start_marker_ship" exact="global.$vas_epai_should_scan_at_patrol_start.keys.list.{$i}"/>
+            <do_if value="not @$vas_epai_patrol_start_marker_ship.exists">
+              <append_to_list name="$vas_epai_dead_patrol_start_marker_ships" exact="$vas_epai_patrol_start_marker_ship"/>
+            </do_if>
+          </do_all>
+          <do_all exact="$vas_epai_dead_patrol_start_marker_ships.count" counter="$i">
+            <remove_value name="global.$vas_epai_should_scan_at_patrol_start.{$vas_epai_dead_patrol_start_marker_ships.{$i}}"/>
+          </do_all>
+        </do_if>
+      </actions>
+    </cue>
+  </cues>
+</mdscript>

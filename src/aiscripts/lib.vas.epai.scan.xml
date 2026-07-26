@@ -1,0 +1,1271 @@
+<?xml version="1.0" encoding="utf-8"?>
+<aiscript name="lib.vas.epai.scan"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="aiscripts.xsd">
+
+  <!--
+    GLOSSARY
+
+    VFF - Visible Fleet Flagman
+      the top commander-in-vision ship - could be true flagman, could be branch leader due to limited vision
+
+    TFF - True Fleet Flagman
+      the ship of a true fleet top commander
+  -->
+
+  <attention min="unknown">
+    <actions>
+      <set_value name="$vas_epai_debug_chance" exact="if (@player.entity.$vas_epai_debug_chance + '') == 'null' then 0 else player.entity.$vas_epai_debug_chance"/>
+
+      <set_value name="$vas_epai_interval" exact="player.entity.$vas_epai_interval"/>
+
+      <!-- All tunables below are mirrored from the config menu (player.entity.$vas_epai_*). -->
+      <set_value name="$vas_epai_max_attack_init_distance" exact="player.entity.$vas_epai_max_attack_init_distance"/>
+      <set_value name="$vas_epai_skip_ship_mayattack" exact="@player.entity.$vas_epai_skip_ship_mayattack"/>
+      <set_value name="$vas_epai_skip_station_mayattack" exact="@player.entity.$vas_epai_skip_station_mayattack"/>
+      <set_value name="$vas_epai_attack_ships" exact="@player.entity.$vas_epai_attack_ships"/>
+      <set_value name="$vas_epai_attack_stations" exact="@player.entity.$vas_epai_attack_stations"/>
+      <set_value name="$vas_epai_all_seeing" exact="@player.entity.$vas_epai_all_seeing"/>
+      <set_value name="$vas_epai_allied_vision" exact="@player.entity.$vas_epai_allied_vision"/>
+
+      <set_value name="$vas_epai_all_sector_enemy_ships" exact="[]"/>
+      <do_if value="$vas_epai_attack_ships">
+        <find_ship name="$vas_epai_all_sector_enemy_ships" space="this.ship.sector" class="[class.ship_s, class.ship_m, class.ship_l, class.ship_xl]" checkoperational="true" docked="false" multiple="true">
+          <match_relation_to object="this.ship" relation="enemy" comparison="le"/>
+        </find_ship>
+      </do_if>
+
+      <set_value name="$vas_epai_all_sector_enemy_stations" exact="[]"/>
+      <do_if value="$vas_epai_attack_stations">
+        <find_station name="$vas_epai_all_sector_enemy_stations" space="this.ship.sector" checkoperational="true" multiple="true" append="true">
+          <match_relation_to object="this.ship" relation="enemy" comparison="le"/>
+        </find_station>
+      </do_if>
+
+      <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] scan sector=' + @this.ship.sector.knownname + ' enemyShips=' + $vas_epai_all_sector_enemy_ships.count + ' enemyStations=' + $vas_epai_all_sector_enemy_stations.count + ' allSeeing=' + $vas_epai_all_seeing + ' alliedVision=' + $vas_epai_allied_vision + ' radar=' + this.ship.maxradarrange + ' maxAttackInitDistance=' + $vas_epai_max_attack_init_distance" append="true"/>
+      <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] self ship=' + this.ship.idcode + ' ' + this.ship.knownname + ' class=' + this.ship.class + ' owner=' + this.ship.owner + ' capship=' + this.ship.iscapitalship + ' order=' + this.ship.order.id + ' hull=' + this.ship.hull + ' shield=' + this.ship.shield + ' hullShield=' + (this.ship.hull + this.ship.shield) + ' dps=' + this.ship.dps.all + ' radar=' + this.ship.maxradarrange" append="true"/>
+
+      <!-- Earliest return if no enemies found -->
+      <do_if value="$vas_epai_all_sector_enemy_ships.count == 0 and $vas_epai_all_sector_enemy_stations.count == 0">
+        <!-- wait is ok here because no synchronicity-reliant actions would be taken -->
+        <wait min="1ms" max="2ms"/>
+        <return value="null">
+          <retval name="potential_target_scores" value="null"/>
+          <retval name="blocking_stations" value="null"/>
+          <retval name="sector_enemy_stations" value="null"/>
+        </return>
+      </do_if>
+
+      <!-- Shared sector sight and friendly attackers: friendly ships
+           can report targets this patrol ship cannot personally see yet. -->
+      <set_value name="$vas_epai_friendly_sector_objects" exact="[]"/>
+      <find_ship name="$vas_epai_friendly_sector_objects" space="this.ship.sector" class="[class.ship_s, class.ship_m, class.ship_l, class.ship_xl]" checkoperational="true" docked="false" multiple="true">
+        <match_relation_to object="this.ship" relation="friend" comparison="ge"/>
+      </find_ship>
+
+      <!-- While vas_epai_friendly_sector_objects includes only ships, resolve their absolute fleet flagmen. -->
+      <set_value name="$vas_epai_friendly_sector_vffs" exact="[]"/>
+      <do_all exact="$vas_epai_friendly_sector_objects.count" counter="$vas_epai_i">
+        <set_value name="$vas_epai_friendly_vff" exact="$vas_epai_friendly_sector_objects.{$vas_epai_i}"/>
+        <set_value name="$vas_epai_friendly_vff_guard" exact="0"/>
+        <do_while value="@$vas_epai_friendly_vff.commander.exists and $vas_epai_friendly_vff.commander.isclass.ship and $vas_epai_friendly_vff_guard lt 100">
+          <set_value name="$vas_epai_friendly_vff_guard" exact="$vas_epai_friendly_vff_guard + 1"/>
+          <set_value name="$vas_epai_friendly_vff" exact="$vas_epai_friendly_vff.commander"/>
+        </do_while>
+        <do_if value="not $vas_epai_friendly_sector_vffs.indexof.{$vas_epai_friendly_vff}">
+          <append_to_list name="$vas_epai_friendly_sector_vffs" exact="$vas_epai_friendly_vff"/>
+        </do_if>
+      </do_all>
+
+      <!-- Stations also provide shared vision -->
+      <find_station name="$vas_epai_friendly_sector_objects" space="this.ship.sector" checkoperational="true" multiple="true" append="true">
+        <match_relation_to object="this.ship" relation="friend" comparison="ge"/>
+      </find_station>
+      <!-- Satellites are faction sight providers too; this can be enlarged later if another deployable proves useful. -->
+      <find_object name="$vas_epai_friendly_sector_objects" space="this.ship.sector" deployablecategory="deployablecategory.satellite" multiple="true" append="true">
+        <match_relation_to object="this.ship" relation="friend" comparison="ge"/>
+      </find_object>
+
+      <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] friendlySectorObjects=' + $vas_epai_friendly_sector_objects.count" append="true"/>
+
+      <!-- ...................................................................................... -->
+      <!-- Visibility cache preprocessor - START................................................. -->
+      <!-- ...................................................................................... -->
+      <!-- This cache stores only plain visibility values for live scan targets, so consumers     -->
+      <!-- do not dereference cached object references when reading it.                           -->
+      <!-- ...................................................................................... -->
+      <!-- THIS CACHE VALUES ARE SAFE TO USE WITHOUT GUARDS ..................................... -->
+      <!-- ...................................................................................... -->
+      <set_value name="$vas_epai_visibility_cache_ttl" exact="[0.5 * $vas_epai_interval, 5s].max"/>
+      <set_value name="$vas_epai_visibility_preprocessed_ship_count" exact="0"/>
+      <set_value name="$vas_epai_visibility_preprocessed_station_count" exact="0"/>
+      <set_value name="$vas_epai_visibility_cached_ship_count" exact="0"/>
+      <set_value name="$vas_epai_visibility_cached_station_count" exact="0"/>
+
+      <!-- Ensure faction-scoped cache maps exist before writing per-target entries. -->
+      <do_if value="not @global.$vas_epai_shipvisibility_cache">
+        <set_value name="global.$vas_epai_shipvisibility_cache" exact="table[]"/>
+      </do_if>
+      <do_if value="not @global.$vas_epai_shipvisibility_cache.{this.ship.owner}">
+        <set_value name="global.$vas_epai_shipvisibility_cache.{this.ship.owner}" exact="table[]"/>
+      </do_if>
+      <do_if value="not @global.$vas_epai_stationvisibility_cache">
+        <set_value name="global.$vas_epai_stationvisibility_cache" exact="table[]"/>
+      </do_if>
+      <do_if value="not @global.$vas_epai_stationvisibility_cache.{this.ship.owner}">
+        <set_value name="global.$vas_epai_stationvisibility_cache.{this.ship.owner}" exact="table[]"/>
+      </do_if>
+
+      <!-- Warm ship visibility for every raw enemy ship candidate. -->
+      <do_all exact="$vas_epai_all_sector_enemy_ships.count" counter="$vas_epai_i">
+        <set_value name="$vas_epai_visibility_target_ship" exact="$vas_epai_all_sector_enemy_ships.{$vas_epai_i}"/>
+
+        <!-- Fresh entries are accepted only during preprocessing; later scan code trusts the cache. -->
+        <do_if value="@global.$vas_epai_shipvisibility_cache.{this.ship.owner}.{$vas_epai_visibility_target_ship}
+                  and player.age lt global.$vas_epai_shipvisibility_cache.{this.ship.owner}.{$vas_epai_visibility_target_ship}.$expiry">
+          <set_value name="$vas_epai_visibility_cached_ship_count" exact="$vas_epai_visibility_cached_ship_count + 1"/>
+          <continue/>
+        </do_if>
+
+        <set_value name="$vas_epai_visibility_target_visible" exact="$vas_epai_all_seeing"/>
+        <set_value name="$vas_epai_visibility_target_cansee" exact="false"/>
+        <set_value name="$vas_epai_visibility_target_inradarrange" exact="false"/>
+        <set_value name="$vas_epai_visibility_seen_source" exact="if $vas_epai_visibility_target_visible then this.ship else null"/>
+        <do_if value="not $vas_epai_visibility_target_visible">
+          <!-- Ask same-faction or allied sector sensors, depending on config. -->
+          <do_all exact="$vas_epai_friendly_sector_objects.count" counter="$vas_epai_j">
+            <set_value name="$vas_epai_visibility_sensor" exact="$vas_epai_friendly_sector_objects.{$vas_epai_j}"/>
+            <do_if value="not $vas_epai_allied_vision and $vas_epai_visibility_sensor.owner != this.ship.owner">
+              <continue/>
+            </do_if>
+            <set_value name="$vas_epai_visibility_sensor_cansee" exact="$vas_epai_visibility_sensor.cansee.{$vas_epai_visibility_target_ship}"/>
+            <set_value name="$vas_epai_visibility_sensor_inradarrange" exact="$vas_epai_visibility_sensor.distanceto.{$vas_epai_visibility_target_ship} le $vas_epai_visibility_sensor.currentradarrange"/>
+            <do_if value="$vas_epai_visibility_sensor_cansee">
+              <set_value name="$vas_epai_visibility_target_cansee" exact="true"/>
+            </do_if>
+            <do_if value="$vas_epai_visibility_sensor_inradarrange">
+              <set_value name="$vas_epai_visibility_target_inradarrange" exact="true"/>
+            </do_if>
+            <do_if value="not $vas_epai_visibility_target_visible and ($vas_epai_visibility_sensor_cansee or $vas_epai_visibility_sensor_inradarrange)">
+              <set_value name="$vas_epai_visibility_target_visible" exact="true"/>
+              <set_value name="$vas_epai_visibility_seen_source" exact="$vas_epai_visibility_sensor"/>
+            </do_if>
+            <do_if value="$vas_epai_visibility_target_cansee and $vas_epai_visibility_target_inradarrange">
+              <break/>
+            </do_if>
+          </do_all>
+        </do_if>
+
+        <!-- Store both positive and negative visibility results to avoid repeated sensor walks. -->
+        <set_value name="global.$vas_epai_shipvisibility_cache.{this.ship.owner}.{$vas_epai_visibility_target_ship}" exact="table[$value = $vas_epai_visibility_target_visible, $cansee = $vas_epai_visibility_target_cansee, $inradarrange = $vas_epai_visibility_target_inradarrange, $expiry = player.age + $vas_epai_visibility_cache_ttl]"/>
+        <set_value name="$vas_epai_visibility_preprocessed_ship_count" exact="$vas_epai_visibility_preprocessed_ship_count + 1"/>
+      </do_all>
+
+      <!-- Warm station visibility for every raw enemy station candidate. -->
+      <do_all exact="$vas_epai_all_sector_enemy_stations.count" counter="$vas_epai_i">
+        <set_value name="$vas_epai_visibility_target_station" exact="$vas_epai_all_sector_enemy_stations.{$vas_epai_i}"/>
+
+        <!-- Fresh entries are accepted only during preprocessing; later scan code trusts the cache. -->
+        <do_if value="@global.$vas_epai_stationvisibility_cache.{this.ship.owner}.{$vas_epai_visibility_target_station}
+                  and player.age lt global.$vas_epai_stationvisibility_cache.{this.ship.owner}.{$vas_epai_visibility_target_station}.$expiry">
+          <set_value name="$vas_epai_visibility_cached_station_count" exact="$vas_epai_visibility_cached_station_count + 1"/>
+          <continue/>
+        </do_if>
+
+        <set_value name="$vas_epai_visibility_target_visible" exact="$vas_epai_all_seeing"/>
+        <set_value name="$vas_epai_visibility_target_cansee" exact="false"/>
+        <set_value name="$vas_epai_visibility_target_inradarrange" exact="false"/>
+        <set_value name="$vas_epai_visibility_seen_source" exact="if $vas_epai_visibility_target_visible then this.ship else null"/>
+        <do_if value="not $vas_epai_visibility_target_visible">
+          <!-- Ask same-faction or allied sector sensors, depending on config. -->
+          <do_all exact="$vas_epai_friendly_sector_objects.count" counter="$vas_epai_j">
+            <set_value name="$vas_epai_visibility_sensor" exact="$vas_epai_friendly_sector_objects.{$vas_epai_j}"/>
+            <do_if value="not $vas_epai_allied_vision and $vas_epai_visibility_sensor.owner != this.ship.owner">
+              <continue/>
+            </do_if>
+            <set_value name="$vas_epai_visibility_sensor_cansee" exact="$vas_epai_visibility_sensor.cansee.{$vas_epai_visibility_target_station}"/>
+            <set_value name="$vas_epai_visibility_sensor_inradarrange" exact="$vas_epai_visibility_sensor.distanceto.{$vas_epai_visibility_target_station} le $vas_epai_visibility_sensor.currentradarrange"/>
+            <do_if value="$vas_epai_visibility_sensor_cansee">
+              <set_value name="$vas_epai_visibility_target_cansee" exact="true"/>
+            </do_if>
+            <do_if value="$vas_epai_visibility_sensor_inradarrange">
+              <set_value name="$vas_epai_visibility_target_inradarrange" exact="true"/>
+            </do_if>
+            <do_if value="not $vas_epai_visibility_target_visible and ($vas_epai_visibility_sensor_cansee or $vas_epai_visibility_sensor_inradarrange)">
+              <set_value name="$vas_epai_visibility_target_visible" exact="true"/>
+              <set_value name="$vas_epai_visibility_seen_source" exact="$vas_epai_visibility_sensor"/>
+            </do_if>
+            <do_if value="$vas_epai_visibility_target_cansee and $vas_epai_visibility_target_inradarrange">
+              <break/>
+            </do_if>
+          </do_all>
+        </do_if>
+
+        <!-- Store both positive and negative visibility results to avoid repeated sensor walks. -->
+        <set_value name="global.$vas_epai_stationvisibility_cache.{this.ship.owner}.{$vas_epai_visibility_target_station}" exact="table[$value = $vas_epai_visibility_target_visible, $cansee = $vas_epai_visibility_target_cansee, $inradarrange = $vas_epai_visibility_target_inradarrange, $expiry = player.age + $vas_epai_visibility_cache_ttl]"/>
+        <set_value name="$vas_epai_visibility_preprocessed_station_count" exact="$vas_epai_visibility_preprocessed_station_count + 1"/>
+      </do_all>
+
+      <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] visibility preprocessor shipsRefreshed=' + $vas_epai_visibility_preprocessed_ship_count + ' shipsCached=' + $vas_epai_visibility_cached_ship_count + ' stationsRefreshed=' + $vas_epai_visibility_preprocessed_station_count + ' stationsCached=' + $vas_epai_visibility_cached_station_count + ' ttl=' + $vas_epai_visibility_cache_ttl" append="true"/>
+      <!-- .................................... -->
+      <!-- Visibility cache preprocessor - END. -->
+      <!-- .................................... -->
+
+      <!-- Filter all enemy ships, construct visibility cache on the fly, construct targetable vffs list -->
+      <set_value name="$vas_epai_valid_sector_enemy_ships" exact="[]"/>
+      <do_all exact="$vas_epai_all_sector_enemy_ships.count" counter="$vas_epai_i">
+        <set_value name="$vas_epai_targetship" exact="$vas_epai_all_sector_enemy_ships.{$vas_epai_i}"/>
+
+        <!-- Non-hostile objects are never enhanced-patrol targets; skip before sight/DPS work. -->
+        <do_if value="not this.ship.ishostileto.{$vas_epai_targetship}">
+          <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] skip nonhostile ship=' + @$vas_epai_targetship.idcode + ' ' + @$vas_epai_targetship.knownname + ' class=' + @$vas_epai_targetship.class + ' owner=' + @$vas_epai_targetship.owner + ' trueowner=' + @$vas_epai_targetship.trueowner + ' selfOwner=' + this.ship.owner + ' selfTrueOwner=' + this.ship.trueowner + ' relationToSelf=' + @$vas_epai_targetship.relationto.{this.ship} + ' selfRelationToTarget=' + this.ship.relationto.{$vas_epai_targetship} + ' selfHasEnemyRelationToOwner=' + this.ship.hasrelation.enemy.{$vas_epai_targetship.owner} + ' selfHasEnemyRelationToTrueOwner=' + this.ship.hasrelation.enemy.{$vas_epai_targetship.trueowner} + ' ishostileto=' + this.ship.ishostileto.{$vas_epai_targetship} + ' mayattack=' + this.mayattack.{$vas_epai_targetship} + ' canbeattacked=' + @$vas_epai_targetship.canbeattacked + ' distance=' + this.ship.distanceto.{$vas_epai_targetship}" append="true"/>
+          <continue/>
+        </do_if>
+
+        <!-- Invalid/locked targets can make the issued Attack order die without fallback. -->
+        <do_if value="not @$vas_epai_targetship.canbeattacked">
+          <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] skip invalid ship=' + @$vas_epai_targetship.idcode + ' ' + @$vas_epai_targetship.knownname + ' class=' + @$vas_epai_targetship.class + ' canbeattacked=' + @$vas_epai_targetship.canbeattacked" append="true"/>
+          <continue/>
+        </do_if>
+
+        <!-- Do not pick targets vanilla already treats as learned indestructible. -->
+        <do_if value="$vas_epai_targetship.isindestructible">
+          <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] skip indestructible ship=' + @$vas_epai_targetship.idcode + ' ' + @$vas_epai_targetship.knownname + ' class=' + @$vas_epai_targetship.class" append="true"/>
+          <continue/>
+        </do_if>
+
+        <!-- Highway contacts are transient movement artifacts, not useful patrol targets. -->
+        <do_if value="@$vas_epai_targetship.zone.isclass.highway">
+          <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] skip highway ship=' + @$vas_epai_targetship.idcode + ' ' + @$vas_epai_targetship.knownname + ' class=' + @$vas_epai_targetship.class + ' zone=' + @$vas_epai_targetship.zone.knownname" append="true"/>
+          <continue/>
+        </do_if>
+
+        <!-- Avoid breaking boarding operations owned by non-hostile factions. -->
+        <do_if value="@$vas_epai_targetship.boardingoperations.count gt 0">
+          <do_for_each name="$vas_epai_boarding_operation" in="$vas_epai_targetship.boardingoperations">
+            <do_if value="$vas_epai_boarding_operation.attackers.count and not this.ship.hasrelation.enemy.{$vas_epai_boarding_operation.attackers.{1}.owner}">
+              <set_value name="$vas_epai_skip_boarded_target"/>
+              <break/>
+            </do_if>
+          </do_for_each>
+          <do_if value="$vas_epai_skip_boarded_target?">
+            <remove_value name="$vas_epai_skip_boarded_target"/>
+            <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] skip boarded ship=' + @$vas_epai_targetship.idcode + ' ' + @$vas_epai_targetship.knownname + ' class=' + @$vas_epai_targetship.class" append="true"/>
+            <continue/>
+          </do_if>
+        </do_if>
+
+        <!-- Early continue if distance is too big - prevent unnecessary calcs -->
+        <set_value name="$vas_epai_target_distance" exact="this.ship.distanceto.{$vas_epai_targetship}"/>
+        <do_if value="$vas_epai_target_distance gt $vas_epai_max_attack_init_distance">
+          <continue/>
+        </do_if>
+
+        <!-- Vanilla mayattack rejects killmilitary civilian targets; this toggle allows EPAI to override that rejection. -->
+        <do_if value="not this.mayattack.{$vas_epai_targetship} and not @$vas_epai_skip_ship_mayattack">
+          <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] skip civilian ship=' + @$vas_epai_targetship.idcode + ' ' + @$vas_epai_targetship.knownname + ' class=' + @$vas_epai_targetship.class + ' owner=' + @$vas_epai_targetship.owner + ' trueowner=' + @$vas_epai_targetship.trueowner + ' relationToSelf=' + @$vas_epai_targetship.relationto.{this.ship} + ' selfRelationToTarget=' + this.ship.relationto.{$vas_epai_targetship} + ' selfOwnerToTargetOwner=' + this.ship.owner.relationto.{$vas_epai_targetship.owner} + ' targetOwnerToSelfOwner=' + $vas_epai_targetship.owner.relationto.{this.ship.owner} + ' selfOwnerToTargetTrueOwner=' + this.ship.owner.relationto.{$vas_epai_targetship.trueowner} + ' targetTrueOwnerToSelfOwner=' + $vas_epai_targetship.trueowner.relationto.{this.ship.owner} + ' mayattack=' + this.mayattack.{$vas_epai_targetship} + ' skipShipMayAttack=' + @$vas_epai_skip_ship_mayattack" append="true"/>
+          <continue/>
+        </do_if>
+
+        <!-- Ship must be already proven operational and not docked - check <find_ship name="$vas_epai_all_sector_enemy_ships"...> -->
+        <do_if value="$vas_epai_targetship.iswreck == true">
+          <continue/>
+        </do_if>
+
+        <!-- Visibility cache was refreshed by the scanner-root preprocessor. -->
+        <do_if value="not @global.$vas_epai_shipvisibility_cache.{this.ship.owner}.{$vas_epai_targetship}">
+          <continue/>
+        </do_if>
+        <set_value name="$vas_epai_can_see_target" exact="global.$vas_epai_shipvisibility_cache.{this.ship.owner}.{$vas_epai_targetship}.$value"/>
+
+        <do_if value="not $vas_epai_can_see_target">
+          <continue/>
+        </do_if>
+
+        <!-- only visible, hostile, totally valid ship targets from here on -->
+        <append_to_list name="$vas_epai_valid_sector_enemy_ships" exact="$vas_epai_targetship"/>
+      </do_all>
+
+      <!-- Already having the visibility cache - iterate over visible enemy ships
+           and find VFFs among them, also checking that commander - if any exists - is visible,
+           not only in the same sector -->
+      <set_value name="$vas_epai_valid_sector_enemy_vffs" exact="[]"/>
+      <do_all exact="$vas_epai_valid_sector_enemy_ships.count" counter="$vas_epai_i">
+        <set_value name="$vas_epai_targetship" exact="$vas_epai_valid_sector_enemy_ships.{$vas_epai_i}"/>
+
+        <!-- Check if any commander ship exists at all -->
+        <do_if value="@$vas_epai_targetship.commander.exists and $vas_epai_targetship.commander.isclass.ship">
+          <!-- Commander visibility was resolved by the visibility preprocessor if this commander is relevant to this scan. -->
+          <do_if value="@global.$vas_epai_shipvisibility_cache.{this.ship.owner}.{$vas_epai_targetship.commander}">
+            <continue/>
+          </do_if>
+          <set_value name="$vas_epai_can_see_target" exact="global.$vas_epai_shipvisibility_cache.{this.ship.owner}.{$vas_epai_targetship.commander}.$value"/>
+          <!-- Only if there's a commander ship and it's visible - we consider this targetship as not VFF -->
+          <do_if value="$vas_epai_can_see_target">
+            <continue/>
+          </do_if>
+        </do_if>
+
+        <append_to_list name="$vas_epai_valid_sector_enemy_vffs" exact="$vas_epai_targetship"/>
+      </do_all>
+
+      <!-- Filter all enemy stations, construct visibility cache on the fly, construct targetable vffs list -->
+      <set_value name="$vas_epai_valid_sector_enemy_stations" exact="[]"/>
+      <do_all exact="$vas_epai_all_sector_enemy_stations.count" counter="$vas_epai_i">
+        <set_value name="$vas_epai_targetstation" exact="$vas_epai_all_sector_enemy_stations.{$vas_epai_i}"/>
+
+        <!-- Build storages can linger around destroyed stations and are not useful patrol targets. -->
+        <do_if value="$vas_epai_targetstation.isclass.buildstorage">
+          <continue/>
+        </do_if>
+
+        <!-- Non-hostile objects are never enhanced-patrol targets; skip before sight/DPS work. -->
+        <do_if value="not this.ship.ishostileto.{$vas_epai_targetstation}">
+          <continue/>
+        </do_if>
+
+        <!-- Invalid/locked targets can make the issued Attack order die without fallback. -->
+        <do_if value="not @$vas_epai_targetstation.canbeattacked">
+          <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] skip invalid station=' + @$vas_epai_targetstation.idcode + ' ' + @$vas_epai_targetstation.knownname + ' class=' + @$vas_epai_targetstation.class + ' canbeattacked=' + @$vas_epai_targetstation.canbeattacked" append="true"/>
+          <continue/>
+        </do_if>
+
+        <!-- Do not pick targets vanilla already treats as learned indestructible. -->
+        <do_if value="$vas_epai_targetstation.isindestructible">
+          <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] skip indestructible station=' + @$vas_epai_targetstation.idcode + ' ' + @$vas_epai_targetstation.knownname + ' class=' + @$vas_epai_targetstation.class" append="true"/>
+          <continue/>
+        </do_if>
+
+        <!-- Highway contacts are transient movement artifacts, not useful patrol targets. -->
+        <do_if value="@$vas_epai_targetstation.zone.isclass.highway">
+          <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] skip highway station=' + @$vas_epai_targetstation.idcode + ' ' + @$vas_epai_targetstation.knownname + ' class=' + @$vas_epai_targetstation.class + ' zone=' + @$vas_epai_targetstation.zone.knownname" append="true"/>
+          <continue/>
+        </do_if>
+
+        <!-- Avoid breaking boarding operations owned by non-hostile factions. -->
+        <do_if value="@$vas_epai_targetstation.boardingoperations.count gt 0">
+          <do_for_each name="$vas_epai_boarding_operation" in="$vas_epai_targetstation.boardingoperations">
+            <do_if value="$vas_epai_boarding_operation.attackers.count and not this.ship.hasrelation.enemy.{$vas_epai_boarding_operation.attackers.{1}.owner}">
+              <set_value name="$vas_epai_skip_boarded_target"/>
+              <break/>
+            </do_if>
+          </do_for_each>
+          <do_if value="$vas_epai_skip_boarded_target?">
+            <remove_value name="$vas_epai_skip_boarded_target"/>
+            <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] skip boarded station=' + @$vas_epai_targetstation.idcode + ' ' + @$vas_epai_targetstation.knownname + ' class=' + @$vas_epai_targetstation.class" append="true"/>
+            <continue/>
+          </do_if>
+        </do_if>
+
+        <!-- Early continue if distance is too big - prevent unnecessary calcs -->
+        <set_value name="$vas_epai_target_distance" exact="this.ship.distanceto.{$vas_epai_targetstation}"/>
+        <do_if value="$vas_epai_target_distance gt $vas_epai_max_attack_init_distance">
+          <continue/>
+        </do_if>
+
+        <!-- Vanilla mayattack rejects killmilitary civilian stations; this toggle allows EPAI to override that rejection. -->
+        <do_if value="not this.mayattack.{$vas_epai_targetstation} and not @$vas_epai_skip_station_mayattack">
+          <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] skip civilian station=' + @$vas_epai_targetstation.idcode + ' ' + @$vas_epai_targetstation.knownname + ' class=' + @$vas_epai_targetstation.class + ' owner=' + @$vas_epai_targetstation.owner + ' trueowner=' + @$vas_epai_targetstation.trueowner + ' relationToSelf=' + @$vas_epai_targetstation.relationto.{this.ship} + ' selfRelationToTarget=' + this.ship.relationto.{$vas_epai_targetstation} + ' selfOwnerToTargetOwner=' + this.ship.owner.relationto.{$vas_epai_targetstation.owner} + ' targetOwnerToSelfOwner=' + $vas_epai_targetstation.owner.relationto.{this.ship.owner} + ' selfOwnerToTargetTrueOwner=' + this.ship.owner.relationto.{$vas_epai_targetstation.trueowner} + ' targetTrueOwnerToSelfOwner=' + $vas_epai_targetstation.trueowner.relationto.{this.ship.owner} + ' mayattack=' + this.mayattack.{$vas_epai_targetstation} + ' skipStationMayAttack=' + @$vas_epai_skip_station_mayattack" append="true"/>
+          <continue/>
+        </do_if>
+
+        <!-- Stations must be already proven operational by the sector find. -->
+
+        <!-- Visibility cache was refreshed by the scanner-root preprocessor. -->
+        <do_if value="not @global.$vas_epai_stationvisibility_cache.{this.ship.owner}.{$vas_epai_targetstation}">
+          <continue/>
+        </do_if>
+        <set_value name="$vas_epai_can_see_target" exact="global.$vas_epai_stationvisibility_cache.{this.ship.owner}.{$vas_epai_targetstation}.$value"/>
+
+        <do_if value="not $vas_epai_can_see_target">
+          <continue/>
+        </do_if>
+
+        <!-- only visible, hostile, totally valid station targets from here on -->
+        <append_to_list name="$vas_epai_valid_sector_enemy_stations" exact="$vas_epai_targetstation"/>
+      </do_all>
+
+      <!-- Still early return if no valid and visible enemies found -->
+      <do_if value="$vas_epai_valid_sector_enemy_vffs.count == 0 and $vas_epai_valid_sector_enemy_stations.count == 0">
+        <!-- wait is ok here because no synchronicity-reliant actions would be taken -->
+        <wait min="1ms" max="2ms"/>
+        <return value="null">
+          <retval name="potential_target_scores" value="null"/>
+          <retval name="blocking_stations" value="null"/>
+          <retval name="sector_enemy_stations" value="null"/>
+        </return>
+      </do_if>
+
+      <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] valid enemies: validShips=' + $vas_epai_valid_sector_enemy_ships.count + ' vffs=' + $vas_epai_valid_sector_enemy_vffs.count + ' validStations=' + $vas_epai_valid_sector_enemy_stations.count" append="true"/>
+
+      <!-- ...................................................................................... -->
+      <!-- VFF fleet branch ships flatlist preprocessor - START.................................. -->
+      <!-- ...................................................................................... -->
+      <!-- This cache stores ship references. Consumers that dereference ships from this list     -->
+      <!-- must check each ship reference still exists before reading live properties from it.    -->
+      <!-- ...................................................................................... -->
+      <!-- THIS CACHE VALUES ARE SAFE ONLY WHEN USED WITH GUARDS! ............................... -->
+      <!-- ...................................................................................... -->
+      <set_value name="$vas_epai_vffbranch_cache_ttl" exact="[0.5 * $vas_epai_interval, 5s].max"/>
+      <set_value name="$vas_epai_vffbranch_preprocessed_count" exact="0"/>
+      <set_value name="$vas_epai_vffbranch_cached_count" exact="0"/>
+
+      <!-- Ensure faction-scoped branch cache maps exist before writing per-VFF entries. -->
+      <do_if value="not @global.$vas_epai_vffbranch_cache">
+        <set_value name="global.$vas_epai_vffbranch_cache" exact="table[]"/>
+      </do_if>
+      <do_if value="not @global.$vas_epai_vffbranch_cache.{this.ship.owner}">
+        <set_value name="global.$vas_epai_vffbranch_cache.{this.ship.owner}" exact="table[]"/>
+      </do_if>
+
+      <!-- Friendly VFF branches are known by their own faction. -->
+      <do_all exact="$vas_epai_friendly_sector_vffs.count" counter="$vas_epai_i">
+        <set_value name="$vas_epai_vffbranch_vff" exact="$vas_epai_friendly_sector_vffs.{$vas_epai_i}"/>
+        <set_value name="$vas_epai_vffbranch_cache_faction" exact="$vas_epai_vffbranch_vff.owner"/>
+        <do_if value="not @global.$vas_epai_vffbranch_cache.{$vas_epai_vffbranch_cache_faction}">
+          <set_value name="global.$vas_epai_vffbranch_cache.{$vas_epai_vffbranch_cache_faction}" exact="table[]"/>
+        </do_if>
+
+        <!-- Each entry freshness is checked only during preprocessing; later scan code trusts the cache. -->
+        <do_if value="@global.$vas_epai_vffbranch_cache.{$vas_epai_vffbranch_cache_faction}.{$vas_epai_vffbranch_vff}
+                  and player.age lt global.$vas_epai_vffbranch_cache.{$vas_epai_vffbranch_cache_faction}.{$vas_epai_vffbranch_vff}.$expiry">
+          <set_value name="$vas_epai_vffbranch_cached_count" exact="$vas_epai_vffbranch_cached_count + 1"/>
+          <continue/>
+        </do_if>
+
+        <set_value name="$vas_epai_vffbranch_ships" exact="[]"/>
+        <set_value name="$vas_epai_vffbranch_visited_ships" exact="[]"/>
+        <set_value name="$vas_epai_vffbranch_processing_stack" exact="[$vas_epai_vffbranch_vff]"/>
+        <set_value name="$vas_epai_vffbranch_flatten_guard" exact="0"/>
+
+        <!-- Inline fleet branch flattening: preprocessors must not call instant helper aiscripts. -->
+        <do_while value="$vas_epai_vffbranch_processing_stack.count gt 0 and $vas_epai_vffbranch_flatten_guard lt 10000">
+          <set_value name="$vas_epai_vffbranch_flatten_guard" exact="$vas_epai_vffbranch_flatten_guard + 1"/>
+          <set_value name="$vas_epai_vffbranch_current_ship" exact="$vas_epai_vffbranch_processing_stack.{$vas_epai_vffbranch_processing_stack.count}"/>
+          <remove_value name="$vas_epai_vffbranch_processing_stack.{$vas_epai_vffbranch_processing_stack.count}"/>
+
+          <do_if value="$vas_epai_vffbranch_current_ship.isclass.ship
+                    and $vas_epai_vffbranch_current_ship.isoperational
+                    and not $vas_epai_vffbranch_visited_ships.indexof.{$vas_epai_vffbranch_current_ship}">
+            <append_to_list name="$vas_epai_vffbranch_visited_ships" exact="$vas_epai_vffbranch_current_ship"/>
+            <append_to_list name="$vas_epai_vffbranch_ships" exact="$vas_epai_vffbranch_current_ship"/>
+
+            <do_all exact="$vas_epai_vffbranch_current_ship.subordinates.count" counter="$vas_epai_j">
+              <set_value name="$vas_epai_vffbranch_subordinate" exact="$vas_epai_vffbranch_current_ship.subordinates.{$vas_epai_j}"/>
+              <do_if value="$vas_epai_vffbranch_subordinate.isclass.ship
+                        and $vas_epai_vffbranch_subordinate.isoperational
+                        and not $vas_epai_vffbranch_subordinate.subordinategroupdockoverride
+                        and not $vas_epai_vffbranch_visited_ships.indexof.{$vas_epai_vffbranch_subordinate}">
+                <append_to_list name="$vas_epai_vffbranch_processing_stack" exact="$vas_epai_vffbranch_subordinate"/>
+              </do_if>
+            </do_all>
+          </do_if>
+        </do_while>
+
+        <do_if value="$vas_epai_vffbranch_flatten_guard ge 10000">
+          <debug_to_file chance="100" name="'_VAS_EnhancedPatrolAI_FLATTEN_GUARD_TRIPPED'" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] VFF branch preprocessor flatten guard cap hit: vff=' + @$vas_epai_vffbranch_vff.idcode + ' ' + @$vas_epai_vffbranch_vff.knownname + ' this=' + @this.ship.idcode + ' ' + @this.ship.knownname + ' flattened=' + $vas_epai_vffbranch_ships.count + ' stackRemaining=' + $vas_epai_vffbranch_processing_stack.count" append="true"/>
+        </do_if>
+
+        <set_value name="global.$vas_epai_vffbranch_cache.{$vas_epai_vffbranch_cache_faction}.{$vas_epai_vffbranch_vff}" exact="table[$value = $vas_epai_vffbranch_ships, $expiry = player.age + $vas_epai_vffbranch_cache_ttl]"/>
+        <set_value name="$vas_epai_vffbranch_preprocessed_count" exact="$vas_epai_vffbranch_preprocessed_count + 1"/>
+      </do_all>
+
+      <!-- Enemy VFF branches are cached from this patrol faction's viewpoint. -->
+      <do_all exact="$vas_epai_valid_sector_enemy_vffs.count" counter="$vas_epai_i">
+        <set_value name="$vas_epai_vffbranch_vff" exact="$vas_epai_valid_sector_enemy_vffs.{$vas_epai_i}"/>
+        <set_value name="$vas_epai_vffbranch_cache_faction" exact="this.ship.owner"/>
+
+        <!-- Fresh entries are accepted only during preprocessing; later scan code trusts the cache. -->
+        <do_if value="@global.$vas_epai_vffbranch_cache.{$vas_epai_vffbranch_cache_faction}.{$vas_epai_vffbranch_vff}
+                  and player.age lt global.$vas_epai_vffbranch_cache.{$vas_epai_vffbranch_cache_faction}.{$vas_epai_vffbranch_vff}.$expiry">
+          <set_value name="$vas_epai_vffbranch_cached_count" exact="$vas_epai_vffbranch_cached_count + 1"/>
+          <continue/>
+        </do_if>
+
+        <set_value name="$vas_epai_vffbranch_ships" exact="[]"/>
+        <set_value name="$vas_epai_vffbranch_visited_ships" exact="[]"/>
+        <set_value name="$vas_epai_vffbranch_processing_stack" exact="[$vas_epai_vffbranch_vff]"/>
+        <set_value name="$vas_epai_vffbranch_flatten_guard" exact="0"/>
+
+        <!-- Enemy branch cache stores only in-sector ships, while the walk still expands the whole branch. -->
+        <do_while value="$vas_epai_vffbranch_processing_stack.count gt 0 and $vas_epai_vffbranch_flatten_guard lt 10000">
+          <set_value name="$vas_epai_vffbranch_flatten_guard" exact="$vas_epai_vffbranch_flatten_guard + 1"/>
+          <set_value name="$vas_epai_vffbranch_current_ship" exact="$vas_epai_vffbranch_processing_stack.{$vas_epai_vffbranch_processing_stack.count}"/>
+          <remove_value name="$vas_epai_vffbranch_processing_stack.{$vas_epai_vffbranch_processing_stack.count}"/>
+
+          <do_if value="$vas_epai_vffbranch_current_ship.isclass.ship
+                    and $vas_epai_vffbranch_current_ship.isoperational
+                    and not $vas_epai_vffbranch_visited_ships.indexof.{$vas_epai_vffbranch_current_ship}">
+            <append_to_list name="$vas_epai_vffbranch_visited_ships" exact="$vas_epai_vffbranch_current_ship"/>
+            <do_if value="$vas_epai_vffbranch_current_ship.sector == this.ship.sector">
+              <append_to_list name="$vas_epai_vffbranch_ships" exact="$vas_epai_vffbranch_current_ship"/>
+            </do_if>
+
+            <do_all exact="$vas_epai_vffbranch_current_ship.subordinates.count" counter="$vas_epai_j">
+              <set_value name="$vas_epai_vffbranch_subordinate" exact="$vas_epai_vffbranch_current_ship.subordinates.{$vas_epai_j}"/>
+              <do_if value="$vas_epai_vffbranch_subordinate.isclass.ship
+                        and $vas_epai_vffbranch_subordinate.isoperational
+                        and not $vas_epai_vffbranch_subordinate.subordinategroupdockoverride
+                        and not $vas_epai_vffbranch_visited_ships.indexof.{$vas_epai_vffbranch_subordinate}">
+                <append_to_list name="$vas_epai_vffbranch_processing_stack" exact="$vas_epai_vffbranch_subordinate"/>
+              </do_if>
+            </do_all>
+          </do_if>
+        </do_while>
+
+        <do_if value="$vas_epai_vffbranch_flatten_guard ge 10000">
+          <debug_to_file chance="100" name="'_VAS_EnhancedPatrolAI_FLATTEN_GUARD_TRIPPED'" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] VFF branch preprocessor flatten guard cap hit: vff=' + @$vas_epai_vffbranch_vff.idcode + ' ' + @$vas_epai_vffbranch_vff.knownname + ' this=' + @this.ship.idcode + ' ' + @this.ship.knownname + ' flattened=' + $vas_epai_vffbranch_ships.count + ' visited=' + $vas_epai_vffbranch_visited_ships.count + ' stackRemaining=' + $vas_epai_vffbranch_processing_stack.count" append="true"/>
+        </do_if>
+
+        <!-- Keep traversal structural, then cache only branch ships visible from this patrol faction's viewpoint. -->
+        <set_value name="$vas_epai_vffbranch_visible_ships" exact="[]"/>
+        <do_all exact="$vas_epai_vffbranch_ships.count" counter="$vas_epai_j">
+          <set_value name="$vas_epai_vffbranch_candidate_ship" exact="$vas_epai_vffbranch_ships.{$vas_epai_j}"/>
+          <do_if value="@global.$vas_epai_shipvisibility_cache.{$vas_epai_vffbranch_cache_faction}.{$vas_epai_vffbranch_candidate_ship}.$value">
+            <append_to_list name="$vas_epai_vffbranch_visible_ships" exact="$vas_epai_vffbranch_candidate_ship"/>
+          </do_if>
+        </do_all>
+        <set_value name="$vas_epai_vffbranch_ships" exact="$vas_epai_vffbranch_visible_ships"/>
+        <remove_value name="$vas_epai_vffbranch_visible_ships"/>
+        <remove_value name="$vas_epai_vffbranch_candidate_ship"/>
+
+        <set_value name="global.$vas_epai_vffbranch_cache.{$vas_epai_vffbranch_cache_faction}.{$vas_epai_vffbranch_vff}" exact="table[$value = $vas_epai_vffbranch_ships, $expiry = player.age + $vas_epai_vffbranch_cache_ttl]"/>
+        <set_value name="$vas_epai_vffbranch_preprocessed_count" exact="$vas_epai_vffbranch_preprocessed_count + 1"/>
+      </do_all>
+
+      <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] VFF branch preprocessor refreshed=' + $vas_epai_vffbranch_preprocessed_count + ' cached=' + $vas_epai_vffbranch_cached_count + ' friendlyVffs=' + $vas_epai_friendly_sector_vffs.count + ' enemyVffs=' + $vas_epai_valid_sector_enemy_vffs.count + ' ttl=' + $vas_epai_vffbranch_cache_ttl" append="true"/>
+      <!-- ................................................... -->
+      <!-- VFF fleet branch ships flatlist preprocessor - END. -->
+      <!-- ................................................... -->
+
+      <!-- ...................................................................................... -->
+      <!-- VFF fleet branch force preprocessor - START........................................... -->
+      <!-- ...................................................................................... -->
+      <!-- This cache stores only plain numeric force values, not ship references. Like the       -->
+      <!-- visibility cache, it is safe for consumers to read directly once the entry exists.     -->
+      <!-- ...................................................................................... -->
+      <!-- THIS CACHE VALUES ARE SAFE TO USE WITHOUT GUARDS ..................................... -->
+      <!-- ...................................................................................... -->
+      <set_value name="$vas_epai_fleetforce_cache_ttl" exact="[0.5 * $vas_epai_interval, 5s].max"/>
+      <set_value name="$vas_epai_fleetforce_preprocessed_count" exact="0"/>
+      <set_value name="$vas_epai_fleetforce_cached_count" exact="0"/>
+      <set_value name="$vas_epai_fleetforce_visible_ship_count" exact="0"/>
+
+      <!-- The cache is faction-by-VFF because different factions can see different parts of one fleet.
+           All allies\friendly factions can get the same cached value - they do share VFF knowledge. -->
+      <do_if value="not @global.$vas_epai_fleetforce_cache">
+        <set_value name="global.$vas_epai_fleetforce_cache" exact="table[]"/>
+      </do_if>
+      <do_if value="not @global.$vas_epai_fleetforce_cache.{this.ship.owner}">
+        <set_value name="global.$vas_epai_fleetforce_cache.{this.ship.owner}" exact="table[]"/>
+      </do_if>
+
+      <!-- Friendly VFF branches are fully known and visible to their own faction. -->
+      <do_all exact="$vas_epai_friendly_sector_vffs.count" counter="$vas_epai_i">
+        <set_value name="$vas_epai_fleetforce_vff" exact="$vas_epai_friendly_sector_vffs.{$vas_epai_i}"/>
+        <set_value name="$vas_epai_fleetforce_cache_faction" exact="$vas_epai_fleetforce_vff.owner"/>
+        <do_if value="not @global.$vas_epai_fleetforce_cache.{$vas_epai_fleetforce_cache_faction}">
+          <set_value name="global.$vas_epai_fleetforce_cache.{$vas_epai_fleetforce_cache_faction}" exact="table[]"/>
+        </do_if>
+
+        <!-- Fresh entries are accepted only during preprocessing; later scan code trusts the cache. -->
+        <do_if value="@global.$vas_epai_fleetforce_cache.{$vas_epai_fleetforce_cache_faction}.{$vas_epai_fleetforce_vff}
+                  and player.age lt global.$vas_epai_fleetforce_cache.{$vas_epai_fleetforce_cache_faction}.{$vas_epai_fleetforce_vff}.$expiry">
+          <set_value name="$vas_epai_fleetforce_cached_count" exact="$vas_epai_fleetforce_cached_count + 1"/>
+          <continue/>
+        </do_if>
+
+        <set_value name="$vas_epai_fleetforce_value" exact="0"/>
+        <set_value name="$vas_epai_fleetforce_branch_ships" exact="global.$vas_epai_vffbranch_cache.{$vas_epai_fleetforce_cache_faction}.{$vas_epai_fleetforce_vff}.$value"/>
+        <do_all exact="$vas_epai_fleetforce_branch_ships.count" counter="$vas_epai_j">
+          <set_value name="$vas_epai_fleetforce_ship" exact="$vas_epai_fleetforce_branch_ships.{$vas_epai_j}"/>
+
+          <!-- Existence guard - ship could be destroyed after value was cached -->
+          <do_if value="not @$vas_epai_fleetforce_ship.exists">
+            <continue/>
+          </do_if>
+
+          <set_value name="$vas_epai_fleetforce_ship_dps_power" exact="($vas_epai_fleetforce_ship.dps.all / global.$vas_epai_ship_force_baselines.$dps)f"/>
+          <set_value name="$vas_epai_fleetforce_ship_durability_power" exact="(($vas_epai_fleetforce_ship.hull + $vas_epai_fleetforce_ship.shield) / global.$vas_epai_ship_force_baselines.$durability)f"/>
+          <set_value name="$vas_epai_fleetforce_ship_cruise_mobility_power" exact="($vas_epai_fleetforce_ship.maxspeed / global.$vas_epai_ship_force_baselines.$maxspeed_cruise)f"/>
+          <!-- A baseline-speed ship at baseline charge time has travel power 1; zero charge time has power 2.
+               Higher charge times smoothly reduce travel impact without making travel speed irrelevant. -->
+          <set_value name="$vas_epai_fleetforce_ship_travel_mobility_power" exact="(($vas_epai_fleetforce_ship.travel.maxspeed / global.$vas_epai_ship_force_baselines.$maxspeed_travel)f) * 2.0 / (1.0 + (($vas_epai_fleetforce_ship.travel.chargetime / global.$vas_epai_ship_force_baselines.$travel_chargetime)f))"/>
+          <set_value name="$vas_epai_fleetforce_ship_mobility_power" exact="$vas_epai_fleetforce_ship_cruise_mobility_power * global.$vas_epai_ship_force_baselines.$mobility_cruise_weight + $vas_epai_fleetforce_ship_travel_mobility_power * global.$vas_epai_ship_force_baselines.$mobility_travel_weight"/>
+          <set_value name="$vas_epai_fleetforce_value" exact="$vas_epai_fleetforce_value + $vas_epai_fleetforce_ship_dps_power * $vas_epai_fleetforce_ship_durability_power * $vas_epai_fleetforce_ship_mobility_power"/>
+          <set_value name="$vas_epai_fleetforce_visible_ship_count" exact="$vas_epai_fleetforce_visible_ship_count + 1"/>
+        </do_all>
+
+        <set_value name="global.$vas_epai_fleetforce_cache.{$vas_epai_fleetforce_cache_faction}.{$vas_epai_fleetforce_vff}" exact="table[$value = $vas_epai_fleetforce_value, $expiry = player.age + $vas_epai_fleetforce_cache_ttl]"/>
+        <set_value name="$vas_epai_fleetforce_preprocessed_count" exact="$vas_epai_fleetforce_preprocessed_count + 1"/>
+      </do_all>
+
+      <!-- Enemy VFF force is limited by this patrol faction's freshly preprocessed visibility cache. -->
+      <do_all exact="$vas_epai_valid_sector_enemy_vffs.count" counter="$vas_epai_i">
+        <set_value name="$vas_epai_fleetforce_vff" exact="$vas_epai_valid_sector_enemy_vffs.{$vas_epai_i}"/>
+        <set_value name="$vas_epai_fleetforce_cache_faction" exact="this.ship.owner"/>
+
+        <!-- Fresh entries are accepted only during preprocessing; later scan code trusts the cache. -->
+        <do_if value="@global.$vas_epai_fleetforce_cache.{$vas_epai_fleetforce_cache_faction}.{$vas_epai_fleetforce_vff}
+                  and player.age lt global.$vas_epai_fleetforce_cache.{$vas_epai_fleetforce_cache_faction}.{$vas_epai_fleetforce_vff}.$expiry">
+          <set_value name="$vas_epai_fleetforce_cached_count" exact="$vas_epai_fleetforce_cached_count + 1"/>
+          <continue/>
+        </do_if>
+
+        <set_value name="$vas_epai_fleetforce_value" exact="0"/>
+        <set_value name="$vas_epai_fleetforce_branch_ships" exact="global.$vas_epai_vffbranch_cache.{$vas_epai_fleetforce_cache_faction}.{$vas_epai_fleetforce_vff}.$value"/>
+        <do_all exact="$vas_epai_fleetforce_branch_ships.count" counter="$vas_epai_j">
+          <set_value name="$vas_epai_fleetforce_ship" exact="$vas_epai_fleetforce_branch_ships.{$vas_epai_j}"/>
+
+          <!-- Existence guard - ship could be destroyed after value was cached -->
+          <do_if value="not @$vas_epai_fleetforce_ship.exists">
+            <continue/>
+          </do_if>
+
+          <!-- Visibility was resolved by the visibility preprocessor; force preprocessing only reads it. -->
+          <do_if value="not @global.$vas_epai_shipvisibility_cache.{this.ship.owner}.{$vas_epai_fleetforce_ship}.$value">
+            <continue/>
+          </do_if>
+
+          <set_value name="$vas_epai_fleetforce_ship_dps_power" exact="($vas_epai_fleetforce_ship.dps.all / global.$vas_epai_ship_force_baselines.$dps)f"/>
+          <set_value name="$vas_epai_fleetforce_ship_durability_power" exact="(($vas_epai_fleetforce_ship.hull + $vas_epai_fleetforce_ship.shield) / global.$vas_epai_ship_force_baselines.$durability)f"/>
+          <set_value name="$vas_epai_fleetforce_ship_cruise_mobility_power" exact="($vas_epai_fleetforce_ship.maxspeed / global.$vas_epai_ship_force_baselines.$maxspeed_cruise)f"/>
+          <!-- A baseline-speed ship at baseline charge time has travel power 1; zero charge time has power 2.
+               Higher charge times smoothly reduce travel impact without making travel speed irrelevant. -->
+          <set_value name="$vas_epai_fleetforce_ship_travel_mobility_power" exact="(($vas_epai_fleetforce_ship.travel.maxspeed / global.$vas_epai_ship_force_baselines.$maxspeed_travel)f) * 2.0 / (1.0 + (($vas_epai_fleetforce_ship.travel.chargetime / global.$vas_epai_ship_force_baselines.$travel_chargetime)f))"/>
+          <set_value name="$vas_epai_fleetforce_ship_mobility_power" exact="$vas_epai_fleetforce_ship_cruise_mobility_power * global.$vas_epai_ship_force_baselines.$mobility_cruise_weight + $vas_epai_fleetforce_ship_travel_mobility_power * global.$vas_epai_ship_force_baselines.$mobility_travel_weight"/>
+          <set_value name="$vas_epai_fleetforce_value" exact="$vas_epai_fleetforce_value + $vas_epai_fleetforce_ship_dps_power * $vas_epai_fleetforce_ship_durability_power * $vas_epai_fleetforce_ship_mobility_power"/>
+          <set_value name="$vas_epai_fleetforce_visible_ship_count" exact="$vas_epai_fleetforce_visible_ship_count + 1"/>
+        </do_all>
+
+        <set_value name="global.$vas_epai_fleetforce_cache.{$vas_epai_fleetforce_cache_faction}.{$vas_epai_fleetforce_vff}" exact="table[$value = $vas_epai_fleetforce_value, $expiry = player.age + $vas_epai_fleetforce_cache_ttl]"/>
+        <set_value name="$vas_epai_fleetforce_preprocessed_count" exact="$vas_epai_fleetforce_preprocessed_count + 1"/>
+      </do_all>
+
+      <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] VFF fleet branch force preprocessor refreshed=' + $vas_epai_fleetforce_preprocessed_count + ' cached=' + $vas_epai_fleetforce_cached_count + ' visibleShips=' + $vas_epai_fleetforce_visible_ship_count + ' friendlyVffs=' + $vas_epai_friendly_sector_vffs.count + ' enemyVffs=' + $vas_epai_valid_sector_enemy_vffs.count + ' ttl=' + $vas_epai_fleetforce_cache_ttl" append="true"/>
+      <!-- .......................................... -->
+      <!-- VFF fleet branch force preprocessor - END. -->
+      <!-- .......................................... -->
+
+      <set_value name="$vas_epai_potential_targets" exact="[]"/>
+      <set_value name="$vas_epai_potential_target_scores" exact="table[]"/>
+      <!--
+        score =
+          focus bonus
+        + target type bonus
+        + matchup bonus
+        + distance bonus
+
+        +7000    already-attacked / join-existing-attack target
+        +6000    ship
+        +5000    station
+        +4000    same size-band ship target, S vs S, M vs M, L vs L, XL vs XL - the closer to the same size the more score
+        +0..4000 distance bonus, closer is better; linear falloff (bonus ~ 1 - frac, frac =
+                 targetDistance/maxAttackInitDistance) - stays near max for close targets, drops
+                 steeply as distance approaches the max
+
+        Distance and same-size compete with each other. Stations are evaluated as XXXL.
+        -->
+      <set_value name="$vas_epai_score_focus_bonus" exact="7000"/>
+      <set_value name="$vas_epai_score_ship_bonus" exact="6000"/>
+      <set_value name="$vas_epai_score_station_bonus" exact="5000"/>
+      <set_value name="$vas_epai_score_matchup_max_bonus" exact="4000"/>
+      <set_value name="$vas_epai_score_matchup_step_penalty" exact="1000"/>
+      <set_value name="$vas_epai_score_distance_max_bonus" exact="4000"/>
+      <set_value name="$vas_epai_score_class_station" exact="5"/>
+      <set_value name="$vas_epai_self_score_class" exact="if this.ship.isclass.ship_s then 1 else if this.ship.isclass.ship_m then 2 else if this.ship.isclass.ship_l then 3 else if this.ship.isclass.ship_xl then 4 else $vas_epai_score_class_station"/>
+      <set_value name="$vas_epai_pending_patrol_force_coefficient" exact="player.entity.$vas_epai_pending_patrol_force_coefficient"/>
+      <set_value name="$vas_epai_force_estimation_deviation" exact="player.entity.$vas_epai_force_estimation_deviation"/>
+
+      <!-- Evaluate visible stations separately from VFFs. -->
+      <do_all exact="$vas_epai_valid_sector_enemy_stations.count" counter="$vas_epai_i">
+        <set_value name="$vas_epai_targetstation" exact="$vas_epai_valid_sector_enemy_stations.{$vas_epai_i}"/>
+        <set_value name="$vas_epai_target_distance" exact="this.ship.distanceto.{$vas_epai_targetstation}"/>
+        <set_value name="$vas_epai_target_score_distance" exact="$vas_epai_score_distance_max_bonus * (1.0 - [$vas_epai_target_distance / [$vas_epai_max_attack_init_distance, 1m].max, 1.0].min)"/>
+        <set_value name="$vas_epai_target_score_matchup" exact="[$vas_epai_score_matchup_max_bonus - (abs($vas_epai_score_class_station - $vas_epai_self_score_class) * $vas_epai_score_matchup_step_penalty), 0].max"/>
+        <set_value name="$vas_epai_target_hull_shield" exact="$vas_epai_targetstation.hull + $vas_epai_targetstation.shield"/>
+        <!-- Station force uses the shared DPS and durability baselines, without mobility. -->
+        <set_value name="$vas_epai_station_force" exact="($vas_epai_targetstation.dps.all / global.$vas_epai_ship_force_baselines.$dps)f * ($vas_epai_target_hull_shield / global.$vas_epai_ship_force_baselines.$durability)f"/>
+        <set_value name="$vas_epai_force_estimation_multiplier" min="[1.0 - $vas_epai_force_estimation_deviation, 0.1].max" max="1.0 + $vas_epai_force_estimation_deviation"/>
+        <set_value name="$vas_epai_station_estimated_force" exact="$vas_epai_station_force * $vas_epai_force_estimation_multiplier"/>
+        <set_value name="$vas_epai_station_join_threshold" exact="player.entity.$vas_epai_station_join_threshold"/>
+        <set_value name="$vas_epai_station_initiation_threshold" exact="player.entity.$vas_epai_station_initiation_threshold"/>
+        <set_value name="$vas_epai_station_committed_distance" exact="20km"/>
+        <set_value name="$vas_epai_committed_force_ratio" exact="0"/>
+        <set_value name="$vas_epai_has_attackers" exact="false"/>
+
+        <!-- Consider joining (initiation aside) an attack on a station
+             only when a fleet attacks it and has reached the local fight. -->
+        <do_all exact="$vas_epai_friendly_sector_vffs.count" counter="$vas_epai_j">
+          <set_value name="$vas_epai_attacking_vff" exact="$vas_epai_friendly_sector_vffs.{$vas_epai_j}"/>
+          <!-- Skip self. -->
+          <do_if value="$vas_epai_attacking_vff == this.ship">
+            <continue/>
+          </do_if>
+
+          <!-- Orders and proximity are intentionally checked live rather than cached. -->
+          <set_value name="$vas_epai_attacking_vff_has_station_order" exact="false"/>
+          <set_value name="$vas_epai_attacking_vff_has_near_ship" exact="false"/>
+          <do_if value="not @global.$vas_epai_vffbranch_cache.{$vas_epai_attacking_vff.owner}.{$vas_epai_attacking_vff}">
+            <continue/>
+          </do_if>
+          <set_value name="$vas_epai_attacking_vff_ships" exact="global.$vas_epai_vffbranch_cache.{$vas_epai_attacking_vff.owner}.{$vas_epai_attacking_vff}.$value"/>
+          <do_all exact="$vas_epai_attacking_vff_ships.count" counter="$vas_epai_k">
+            <set_value name="$vas_epai_attacking_vff_ship" exact="$vas_epai_attacking_vff_ships.{$vas_epai_k}"/>
+
+            <!-- Existence guard - ship could be destroyed after value was cached -->
+            <do_if value="not @$vas_epai_attacking_vff_ship.exists">
+              <continue/>
+            </do_if>
+
+            <do_if value="$vas_epai_attacking_vff_ship.sector == this.ship.sector
+                      and $vas_epai_attacking_vff_ship.distanceto.{$vas_epai_targetstation} lt $vas_epai_station_committed_distance">
+              <set_value name="$vas_epai_attacking_vff_has_near_ship" exact="true"/>
+            </do_if>
+            <!-- Walk the order stack: EPAI wraps a live Attack order in a temporary MoveGeneric
+                 approach leg while the target is unseen (lib.vas.epai.issue.attack.xml), so the
+                 active top order can be 'MoveGeneric' while the ship is still fully committed.
+                 The first Attack order found is decisive; anything above it must be MoveGeneric. -->
+            <set_value name="$vas_epai_stack_index" exact="1"/>
+            <set_value name="$vas_epai_stack_stop" exact="false"/>
+            <do_while value="not $vas_epai_stack_stop and $vas_epai_stack_index le $vas_epai_attacking_vff_ship.orders.count">
+              <set_value name="$vas_epai_stack_order" exact="$vas_epai_attacking_vff_ship.orders.{$vas_epai_stack_index}"/>
+              <do_if value="$vas_epai_stack_order.id == 'Attack'">
+                <set_value name="$vas_epai_attacker_order_target" exact="@$vas_epai_stack_order.$primarytarget"/>
+                <set_value name="$vas_epai_attacker_track_target" exact="if (@$vas_epai_attacker_order_target.isclass.ship or @$vas_epai_attacker_order_target.isclass.station) then $vas_epai_attacker_order_target else if @$vas_epai_attacker_order_target.container.exists then $vas_epai_attacker_order_target.container else if @$vas_epai_attacker_order_target.defensible.exists then $vas_epai_attacker_order_target.defensible else $vas_epai_attacker_order_target"/>
+                <do_if value="$vas_epai_attacker_track_target == $vas_epai_targetstation
+                          or @$vas_epai_stack_order.$secondarytargets.indexof.{$vas_epai_targetstation}
+                          or @$vas_epai_stack_order.$secondarytargets.indexof.{$vas_epai_attacker_track_target}">
+                  <set_value name="$vas_epai_attacking_vff_has_station_order" exact="true"/>
+                </do_if>
+                <set_value name="$vas_epai_stack_stop" exact="true"/>
+              </do_if>
+              <do_elseif value="$vas_epai_stack_order.id != 'MoveGeneric'">
+                <set_value name="$vas_epai_stack_stop" exact="true"/>
+              </do_elseif>
+              <set_value name="$vas_epai_stack_index" exact="$vas_epai_stack_index + 1"/>
+            </do_while>
+            <do_if value="$vas_epai_attacking_vff_has_station_order and $vas_epai_attacking_vff_has_near_ship">
+              <break/>
+            </do_if>
+          </do_all>
+
+          <!-- If the station is actually considered attacked by this VFF, we add it as an attacker -->
+          <do_if value="$vas_epai_attacking_vff_has_station_order and $vas_epai_attacking_vff_has_near_ship">
+            <do_if value="not @global.$vas_epai_fleetforce_cache.{$vas_epai_attacking_vff.owner}.{$vas_epai_attacking_vff}">
+              <continue/>
+            </do_if>
+            <set_value name="$vas_epai_attacking_vff_force" exact="global.$vas_epai_fleetforce_cache.{$vas_epai_attacking_vff.owner}.{$vas_epai_attacking_vff}.$value"/>
+            <set_value name="$vas_epai_force_estimation_multiplier" min="[1.0 - $vas_epai_force_estimation_deviation, 0.1].max" max="1.0 + $vas_epai_force_estimation_deviation"/>
+            <set_value name="$vas_epai_attacking_vff_estimated_force" exact="$vas_epai_attacking_vff_force * $vas_epai_force_estimation_multiplier"/>
+            <set_value name="$vas_epai_attacking_vff_force_ratio" exact="$vas_epai_attacking_vff_estimated_force / [$vas_epai_station_estimated_force, 0.00000001].max"/>
+            <set_value name="$vas_epai_committed_force_ratio" exact="$vas_epai_committed_force_ratio + $vas_epai_attacking_vff_force_ratio"/>
+            <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] station committed VFF station=' + @$vas_epai_targetstation.idcode + ' ' + @$vas_epai_targetstation.knownname + ' stationForce=' + $vas_epai_station_force + ' stationEstimatedForce=' + $vas_epai_station_estimated_force + ' vff=' + @$vas_epai_attacking_vff.idcode + ' ' + @$vas_epai_attacking_vff.knownname + ' force=' + $vas_epai_attacking_vff_force + ' estimatedForce=' + $vas_epai_attacking_vff_estimated_force + ' forceRatio=' + $vas_epai_attacking_vff_force_ratio + ' committedForceRatio=' + $vas_epai_committed_force_ratio + ' nearDistance=' + $vas_epai_station_committed_distance" append="true"/>
+            <!-- Stop calculating the committed attack force when threshold is already known to be reached -->
+            <do_if value="$vas_epai_committed_force_ratio ge $vas_epai_station_join_threshold">
+              <set_value name="$vas_epai_has_attackers" exact="true"/>
+              <break/>
+            </do_if>
+          </do_if>
+        </do_all>
+
+        <!-- If station is attacked by enough forces, just attack it right away without any more calculations -->
+        <do_if value="$vas_epai_has_attackers">
+          <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] accept station join=' + @$vas_epai_targetstation.idcode + ' ' + @$vas_epai_targetstation.knownname + ' owner=' + @$vas_epai_targetstation.owner + ' trueowner=' + @$vas_epai_targetstation.trueowner + ' relationToSelf=' + @$vas_epai_targetstation.relationto.{this.ship} + ' selfRelationToTarget=' + this.ship.relationto.{$vas_epai_targetstation} + ' selfOwnerToTargetOwner=' + this.ship.owner.relationto.{$vas_epai_targetstation.owner} + ' targetOwnerToSelfOwner=' + $vas_epai_targetstation.owner.relationto.{this.ship.owner} + ' selfOwnerToTargetTrueOwner=' + this.ship.owner.relationto.{$vas_epai_targetstation.trueowner} + ' targetTrueOwnerToSelfOwner=' + $vas_epai_targetstation.trueowner.relationto.{this.ship.owner} + ' mayattack=' + this.mayattack.{$vas_epai_targetstation} + ' stationForce=' + $vas_epai_station_force + ' stationEstimatedForce=' + $vas_epai_station_estimated_force + ' committedForceRatio=' + $vas_epai_committed_force_ratio + ' stationJoinThreshold=' + $vas_epai_station_join_threshold + ' committedDistance=' + $vas_epai_station_committed_distance" append="true"/>
+          <set_value name="$vas_epai_target_score" exact="$vas_epai_score_focus_bonus + $vas_epai_score_station_bonus + $vas_epai_target_score_matchup + $vas_epai_target_score_distance"/>
+          <set_value name="$vas_epai_potential_target_scores.{$vas_epai_targetstation}" exact="$vas_epai_target_score"/>
+          <append_to_list name="$vas_epai_potential_targets" exact="$vas_epai_targetstation"/>
+          <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] potential target score=' + @$vas_epai_targetstation.idcode + ' ' + @$vas_epai_targetstation.knownname + ' rawScore=' + $vas_epai_target_score + ' focusBonus=' + $vas_epai_score_focus_bonus + ' stationBonus=' + $vas_epai_score_station_bonus + ' matchupBonus=' + $vas_epai_target_score_matchup + ' distanceBonus=' + $vas_epai_target_score_distance" append="true"/>
+          <continue/>
+        </do_if>
+        <!-- Do not consider initiating the attack if patrol ship is not capital -->
+        <do_elseif value="not this.ship.iscapitalship">
+          <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] skip station no-join-noncapital=' + @$vas_epai_targetstation.idcode + ' ' + @$vas_epai_targetstation.knownname + ' stationForce=' + $vas_epai_station_force + ' stationEstimatedForce=' + $vas_epai_station_estimated_force + ' committedForceRatio=' + $vas_epai_committed_force_ratio + ' stationJoinThreshold=' + $vas_epai_station_join_threshold + ' committedDistance=' + $vas_epai_station_committed_distance" append="true"/>
+          <continue/>
+        </do_elseif>
+
+        <!-- Station initiation is about this patrol group and nearby friendly patroling ships. -->
+        <do_if value="not @global.$vas_epai_fleetforce_cache.{this.ship.owner}.{this.ship}">
+          <continue/>
+        </do_if>
+        <set_value name="$vas_epai_self_vff_force" exact="global.$vas_epai_fleetforce_cache.{this.ship.owner}.{this.ship}.$value"/>
+        <set_value name="$vas_epai_force_estimation_multiplier" min="[1.0 - $vas_epai_force_estimation_deviation, 0.1].max" max="1.0 + $vas_epai_force_estimation_deviation"/>
+        <set_value name="$vas_epai_self_vff_estimated_force" exact="$vas_epai_self_vff_force * $vas_epai_force_estimation_multiplier"/>
+        <set_value name="$vas_epai_self_force_ratio" exact="$vas_epai_self_vff_estimated_force / [$vas_epai_station_estimated_force, 0.00000001].max"/>
+        <set_value name="$vas_epai_station_initiation_force_ratio" exact="$vas_epai_self_force_ratio"/>
+        <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] station self VFF station=' + @$vas_epai_targetstation.idcode + ' ' + @$vas_epai_targetstation.knownname + ' stationForce=' + $vas_epai_station_force + ' stationEstimatedForce=' + $vas_epai_station_estimated_force + ' vff=' + @this.ship.idcode + ' ' + @this.ship.knownname + ' force=' + $vas_epai_self_vff_force + ' estimatedForce=' + $vas_epai_self_vff_estimated_force + ' forceRatio=' + $vas_epai_self_force_ratio" append="true"/>
+
+        <do_if value="$vas_epai_station_initiation_force_ratio ge $vas_epai_station_initiation_threshold">
+          <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] accept station self-initiation=' + @$vas_epai_targetstation.idcode + ' ' + @$vas_epai_targetstation.knownname + ' owner=' + @$vas_epai_targetstation.owner + ' trueowner=' + @$vas_epai_targetstation.trueowner + ' relationToSelf=' + @$vas_epai_targetstation.relationto.{this.ship} + ' selfRelationToTarget=' + this.ship.relationto.{$vas_epai_targetstation} + ' selfOwnerToTargetOwner=' + this.ship.owner.relationto.{$vas_epai_targetstation.owner} + ' targetOwnerToSelfOwner=' + $vas_epai_targetstation.owner.relationto.{this.ship.owner} + ' selfOwnerToTargetTrueOwner=' + this.ship.owner.relationto.{$vas_epai_targetstation.trueowner} + ' targetTrueOwnerToSelfOwner=' + $vas_epai_targetstation.trueowner.relationto.{this.ship.owner} + ' mayattack=' + this.mayattack.{$vas_epai_targetstation} + ' stationForce=' + $vas_epai_station_force + ' stationEstimatedForce=' + $vas_epai_station_estimated_force + ' selfVffForce=' + $vas_epai_self_vff_force + ' selfVffEstimatedForce=' + $vas_epai_self_vff_estimated_force + ' selfForceRatio=' + $vas_epai_self_force_ratio + ' stationInitiationThreshold=' + $vas_epai_station_initiation_threshold" append="true"/>
+          <set_value name="$vas_epai_target_score" exact="$vas_epai_score_station_bonus + $vas_epai_target_score_matchup + $vas_epai_target_score_distance"/>
+          <set_value name="$vas_epai_potential_target_scores.{$vas_epai_targetstation}" exact="$vas_epai_target_score"/>
+          <append_to_list name="$vas_epai_potential_targets" exact="$vas_epai_targetstation"/>
+          <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] potential target score=' + @$vas_epai_targetstation.idcode + ' ' + @$vas_epai_targetstation.knownname + ' rawScore=' + $vas_epai_target_score + ' stationBonus=' + $vas_epai_score_station_bonus + ' matchupBonus=' + $vas_epai_target_score_matchup + ' distanceBonus=' + $vas_epai_target_score_distance" append="true"/>
+          <continue/>
+        </do_if>
+
+        <!-- Pending same-faction patrols are discounted because they may choose another target first. -->
+        <do_all exact="$vas_epai_friendly_sector_vffs.count" counter="$vas_epai_j">
+          <set_value name="$vas_epai_pending_patrol_vff" exact="$vas_epai_friendly_sector_vffs.{$vas_epai_j}"/>
+          <do_if value="$vas_epai_pending_patrol_vff == this.ship
+                    or $vas_epai_pending_patrol_vff.owner != this.ship.owner
+                    or @$vas_epai_pending_patrol_vff.order.id != 'Patrol'">
+            <continue/>
+          </do_if>
+          <do_if value="not @global.$vas_epai_fleetforce_cache.{$vas_epai_pending_patrol_vff.owner}.{$vas_epai_pending_patrol_vff}">
+            <continue/>
+          </do_if>
+          <set_value name="$vas_epai_pending_patrol_force" exact="global.$vas_epai_fleetforce_cache.{$vas_epai_pending_patrol_vff.owner}.{$vas_epai_pending_patrol_vff}.$value"/>
+          <set_value name="$vas_epai_force_estimation_multiplier" min="[1.0 - $vas_epai_force_estimation_deviation, 0.1].max" max="1.0 + $vas_epai_force_estimation_deviation"/>
+          <set_value name="$vas_epai_pending_patrol_estimated_force" exact="$vas_epai_pending_patrol_force * $vas_epai_force_estimation_multiplier"/>
+          <set_value name="$vas_epai_pending_patrol_force_ratio" exact="$vas_epai_pending_patrol_estimated_force / [$vas_epai_station_estimated_force, 0.00000001].max * $vas_epai_pending_patrol_force_coefficient"/>
+          <set_value name="$vas_epai_station_initiation_force_ratio" exact="$vas_epai_station_initiation_force_ratio + $vas_epai_pending_patrol_force_ratio"/>
+          <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] station pending patrol VFF station=' + @$vas_epai_targetstation.idcode + ' ' + @$vas_epai_targetstation.knownname + ' stationForce=' + $vas_epai_station_force + ' stationEstimatedForce=' + $vas_epai_station_estimated_force + ' vff=' + @$vas_epai_pending_patrol_vff.idcode + ' ' + @$vas_epai_pending_patrol_vff.knownname + ' force=' + $vas_epai_pending_patrol_force + ' estimatedForce=' + $vas_epai_pending_patrol_estimated_force + ' discountedForceRatio=' + $vas_epai_pending_patrol_force_ratio + ' stationInitiationForceRatio=' + $vas_epai_station_initiation_force_ratio" append="true"/>
+          <do_if value="$vas_epai_station_initiation_force_ratio ge $vas_epai_station_initiation_threshold">
+            <break/>
+          </do_if>
+        </do_all>
+
+        <do_if value="$vas_epai_station_initiation_force_ratio ge $vas_epai_station_initiation_threshold">
+          <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] accept station initiation=' + @$vas_epai_targetstation.idcode + ' ' + @$vas_epai_targetstation.knownname + ' owner=' + @$vas_epai_targetstation.owner + ' trueowner=' + @$vas_epai_targetstation.trueowner + ' relationToSelf=' + @$vas_epai_targetstation.relationto.{this.ship} + ' selfRelationToTarget=' + this.ship.relationto.{$vas_epai_targetstation} + ' selfOwnerToTargetOwner=' + this.ship.owner.relationto.{$vas_epai_targetstation.owner} + ' targetOwnerToSelfOwner=' + $vas_epai_targetstation.owner.relationto.{this.ship.owner} + ' selfOwnerToTargetTrueOwner=' + this.ship.owner.relationto.{$vas_epai_targetstation.trueowner} + ' targetTrueOwnerToSelfOwner=' + $vas_epai_targetstation.trueowner.relationto.{this.ship.owner} + ' mayattack=' + this.mayattack.{$vas_epai_targetstation} + ' stationForce=' + $vas_epai_station_force + ' stationEstimatedForce=' + $vas_epai_station_estimated_force + ' committedForceRatio=' + $vas_epai_committed_force_ratio + ' stationInitiationForceRatio=' + $vas_epai_station_initiation_force_ratio + ' selfVffForce=' + $vas_epai_self_vff_force + ' selfVffEstimatedForce=' + $vas_epai_self_vff_estimated_force + ' selfForceRatio=' + $vas_epai_self_force_ratio + ' pendingPatrolForceCoefficient=' + $vas_epai_pending_patrol_force_coefficient + ' stationInitiationThreshold=' + $vas_epai_station_initiation_threshold + ' directCanSee=' + this.ship.cansee.{$vas_epai_targetstation} + ' distance=' + this.ship.distanceto.{$vas_epai_targetstation} + ' maxAttackInitDistance=' + $vas_epai_max_attack_init_distance" append="true"/>
+          <set_value name="$vas_epai_target_score" exact="$vas_epai_score_station_bonus + $vas_epai_target_score_matchup + $vas_epai_target_score_distance"/>
+          <set_value name="$vas_epai_potential_target_scores.{$vas_epai_targetstation}" exact="$vas_epai_target_score"/>
+          <append_to_list name="$vas_epai_potential_targets" exact="$vas_epai_targetstation"/>
+          <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] potential target score=' + @$vas_epai_targetstation.idcode + ' ' + @$vas_epai_targetstation.knownname + ' rawScore=' + $vas_epai_target_score + ' stationBonus=' + $vas_epai_score_station_bonus + ' matchupBonus=' + $vas_epai_target_score_matchup + ' distanceBonus=' + $vas_epai_target_score_distance" append="true"/>
+          <continue/>
+        </do_if>
+        <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] skip station initiation=' + @$vas_epai_targetstation.idcode + ' ' + @$vas_epai_targetstation.knownname + ' stationForce=' + $vas_epai_station_force + ' stationEstimatedForce=' + $vas_epai_station_estimated_force + ' committedForceRatio=' + $vas_epai_committed_force_ratio + ' stationInitiationForceRatio=' + $vas_epai_station_initiation_force_ratio + ' selfVffForce=' + $vas_epai_self_vff_force + ' selfVffEstimatedForce=' + $vas_epai_self_vff_estimated_force + ' selfForceRatio=' + $vas_epai_self_force_ratio + ' pendingPatrolForceCoefficient=' + $vas_epai_pending_patrol_force_coefficient + ' stationInitiationThreshold=' + $vas_epai_station_initiation_threshold" append="true"/>
+      </do_all>
+
+      <!-- Evaluate VFF ships separately from stations. -->
+      <do_all exact="$vas_epai_valid_sector_enemy_vffs.count" counter="$vas_epai_i">
+        <set_value name="$vas_epai_target_vff" exact="$vas_epai_valid_sector_enemy_vffs.{$vas_epai_i}"/>
+        <set_value name="$vas_epai_target_distance" exact="this.ship.distanceto.{$vas_epai_target_vff}"/>
+        <set_value name="$vas_epai_target_score_class" exact="if $vas_epai_target_vff.isclass.ship_s then 1 else if $vas_epai_target_vff.isclass.ship_m then 2 else if $vas_epai_target_vff.isclass.ship_l then 3 else if $vas_epai_target_vff.isclass.ship_xl then 4 else $vas_epai_score_class_station"/>
+        <set_value name="$vas_epai_target_score_distance" exact="$vas_epai_score_distance_max_bonus * (1.0 - [$vas_epai_target_distance / [$vas_epai_max_attack_init_distance, 1m].max, 1.0].min)"/>
+        <set_value name="$vas_epai_target_score_matchup" exact="[$vas_epai_score_matchup_max_bonus - (abs($vas_epai_target_score_class - $vas_epai_self_score_class) * $vas_epai_score_matchup_step_penalty), 0].max"/>
+
+        <!-- Enemy force calculation -->
+        <do_if value="not @global.$vas_epai_fleetforce_cache.{this.ship.owner}.{$vas_epai_target_vff}">
+          <continue/>
+        </do_if>
+        <set_value name="$vas_epai_target_vff_force" exact="global.$vas_epai_fleetforce_cache.{this.ship.owner}.{$vas_epai_target_vff}.$value"/>
+        <set_value name="$vas_epai_force_estimation_multiplier" min="[1.0 - $vas_epai_force_estimation_deviation, 0.1].max" max="1.0 + $vas_epai_force_estimation_deviation"/>
+        <set_value name="$vas_epai_target_vff_estimated_force" exact="$vas_epai_target_vff_force * $vas_epai_force_estimation_multiplier"/>
+
+        <!-- Local variables init -->
+        <set_value name="$vas_epai_ship_overcommit_limit" exact="player.entity.$vas_epai_ship_overcommit_limit"/>
+        <set_value name="$vas_epai_ship_join_threshold" exact="player.entity.$vas_epai_ship_join_threshold"/>
+        <set_value name="$vas_epai_committed_force_ratio" exact="0"/>
+        <set_value name="$vas_epai_has_attackers" exact="false"/>
+
+        <do_if value="not @global.$vas_epai_vffbranch_cache.{this.ship.owner}.{$vas_epai_target_vff}">
+          <continue/>
+        </do_if>
+        <set_value name="$vas_epai_target_vff_ships" exact="global.$vas_epai_vffbranch_cache.{this.ship.owner}.{$vas_epai_target_vff}.$value"/>
+
+        <!-- A friendly VFF is committed only when the VFF ship itself has a live Attack order against this enemy VFF branch. -->
+        <do_all exact="$vas_epai_friendly_sector_vffs.count" counter="$vas_epai_j">
+          <set_value name="$vas_epai_attacking_vff" exact="$vas_epai_friendly_sector_vffs.{$vas_epai_j}"/>
+          <!-- Skip self. -->
+          <do_if value="$vas_epai_attacking_vff == this.ship">
+            <continue/>
+          </do_if>
+
+          <!-- Walk the order stack: EPAI wraps a live Attack order in a temporary MoveGeneric
+               approach leg while the target is unseen (lib.vas.epai.issue.attack.xml), so the
+               active top order can be 'MoveGeneric' while the ship is still fully committed.
+               The first Attack order found is decisive; anything above it must be MoveGeneric. -->
+          <set_value name="$vas_epai_attacking_vff_has_target_order" exact="false"/>
+          <set_value name="$vas_epai_attacker_has_attack_order" exact="false"/>
+          <set_value name="$vas_epai_stack_index" exact="1"/>
+          <set_value name="$vas_epai_stack_stop" exact="false"/>
+          <do_while value="not $vas_epai_stack_stop and $vas_epai_stack_index le $vas_epai_attacking_vff.orders.count">
+            <set_value name="$vas_epai_stack_order" exact="$vas_epai_attacking_vff.orders.{$vas_epai_stack_index}"/>
+            <do_if value="$vas_epai_stack_order.id == 'Attack'">
+              <set_value name="$vas_epai_attacker_has_attack_order" exact="true"/>
+              <set_value name="$vas_epai_attacker_order_target" exact="@$vas_epai_stack_order.$primarytarget"/>
+              <set_value name="$vas_epai_attacker_track_target" exact="if (@$vas_epai_attacker_order_target.isclass.ship or @$vas_epai_attacker_order_target.isclass.station) then $vas_epai_attacker_order_target else if @$vas_epai_attacker_order_target.container.exists then $vas_epai_attacker_order_target.container else if @$vas_epai_attacker_order_target.defensible.exists then $vas_epai_attacker_order_target.defensible else $vas_epai_attacker_order_target"/>
+              <set_value name="$vas_epai_stack_stop" exact="true"/>
+            </do_if>
+            <do_elseif value="$vas_epai_stack_order.id != 'MoveGeneric'">
+              <set_value name="$vas_epai_stack_stop" exact="true"/>
+            </do_elseif>
+            <set_value name="$vas_epai_stack_index" exact="$vas_epai_stack_index + 1"/>
+          </do_while>
+          <do_if value="not $vas_epai_attacker_has_attack_order">
+            <continue/>
+          </do_if>
+
+          <do_all exact="$vas_epai_target_vff_ships.count" counter="$vas_epai_k">
+            <set_value name="$vas_epai_target_vff_ship" exact="$vas_epai_target_vff_ships.{$vas_epai_k}"/>
+            <do_if value="$vas_epai_attacker_track_target == $vas_epai_target_vff_ship
+                      or @$vas_epai_stack_order.$secondarytargets.indexof.{$vas_epai_target_vff_ship}">
+              <set_value name="$vas_epai_attacking_vff_has_target_order" exact="true"/>
+              <break/>
+            </do_if>
+          </do_all>
+          <do_if value="not $vas_epai_attacking_vff_has_target_order">
+            <continue/>
+          </do_if>
+          <do_if value="not @global.$vas_epai_fleetforce_cache.{$vas_epai_attacking_vff.owner}.{$vas_epai_attacking_vff}">
+            <continue/>
+          </do_if>
+          <set_value name="$vas_epai_attacking_vff_force" exact="global.$vas_epai_fleetforce_cache.{$vas_epai_attacking_vff.owner}.{$vas_epai_attacking_vff}.$value"/>
+          <set_value name="$vas_epai_force_estimation_multiplier" min="[1.0 - $vas_epai_force_estimation_deviation, 0.1].max" max="1.0 + $vas_epai_force_estimation_deviation"/>
+          <set_value name="$vas_epai_attacking_vff_estimated_force" exact="$vas_epai_attacking_vff_force * $vas_epai_force_estimation_multiplier"/>
+          <set_value name="$vas_epai_attacking_vff_force_ratio" exact="$vas_epai_attacking_vff_estimated_force / [$vas_epai_target_vff_estimated_force, 0.00000001].max"/>
+          <set_value name="$vas_epai_committed_force_ratio" exact="$vas_epai_committed_force_ratio + $vas_epai_attacking_vff_force_ratio"/>
+          <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] VFF committed attacker target=' + @$vas_epai_target_vff.idcode + ' ' + @$vas_epai_target_vff.knownname + ' targetForce=' + $vas_epai_target_vff_force + ' targetEstimatedForce=' + $vas_epai_target_vff_estimated_force + ' vff=' + @$vas_epai_attacking_vff.idcode + ' ' + @$vas_epai_attacking_vff.knownname + ' force=' + $vas_epai_attacking_vff_force + ' estimatedForce=' + $vas_epai_attacking_vff_estimated_force + ' forceRatio=' + $vas_epai_attacking_vff_force_ratio + ' committedForceRatio=' + $vas_epai_committed_force_ratio" append="true"/>
+          <do_if value="$vas_epai_committed_force_ratio ge $vas_epai_ship_join_threshold">
+            <set_value name="$vas_epai_has_attackers" exact="true"/>
+          </do_if>
+          <do_if value="$vas_epai_committed_force_ratio gt $vas_epai_ship_overcommit_limit">
+            <break/>
+          </do_if>
+        </do_all>
+
+        <!-- If the enemy is totally outgunned - let friends finish that enemy vff branch -->
+        <do_if value="$vas_epai_committed_force_ratio gt $vas_epai_ship_overcommit_limit">
+          <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] skip VFF overcommitted=' + @$vas_epai_target_vff.idcode + ' ' + @$vas_epai_target_vff.knownname + ' targetForce=' + $vas_epai_target_vff_force + ' targetEstimatedForce=' + $vas_epai_target_vff_estimated_force + ' committedForceRatio=' + $vas_epai_committed_force_ratio + ' shipOvercommitLimit=' + $vas_epai_ship_overcommit_limit" append="true"/>
+          <continue/>
+        </do_if>
+
+        <!-- If the enemy is attacked with enough friendly committed force - join the attack -->
+        <do_if value="$vas_epai_has_attackers">
+          <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] accept VFF join=' + @$vas_epai_target_vff.idcode + ' ' + @$vas_epai_target_vff.knownname + ' owner=' + @$vas_epai_target_vff.owner + ' trueowner=' + @$vas_epai_target_vff.trueowner + ' relationToSelf=' + @$vas_epai_target_vff.relationto.{this.ship} + ' selfRelationToTarget=' + this.ship.relationto.{$vas_epai_target_vff} + ' selfOwnerToTargetOwner=' + this.ship.owner.relationto.{$vas_epai_target_vff.owner} + ' targetOwnerToSelfOwner=' + $vas_epai_target_vff.owner.relationto.{this.ship.owner} + ' selfOwnerToTargetTrueOwner=' + this.ship.owner.relationto.{$vas_epai_target_vff.trueowner} + ' targetTrueOwnerToSelfOwner=' + $vas_epai_target_vff.trueowner.relationto.{this.ship.owner} + ' mayattack=' + this.mayattack.{$vas_epai_target_vff} + ' targetForce=' + $vas_epai_target_vff_force + ' targetEstimatedForce=' + $vas_epai_target_vff_estimated_force + ' committedForceRatio=' + $vas_epai_committed_force_ratio + ' shipJoinThreshold=' + $vas_epai_ship_join_threshold + ' shipOvercommitLimit=' + $vas_epai_ship_overcommit_limit" append="true"/>
+          <set_value name="$vas_epai_target_score" exact="$vas_epai_score_focus_bonus + $vas_epai_score_ship_bonus + $vas_epai_target_score_matchup + $vas_epai_target_score_distance"/>
+          <set_value name="$vas_epai_potential_target_scores.{$vas_epai_target_vff}" exact="$vas_epai_target_score"/>
+          <append_to_list name="$vas_epai_potential_targets" exact="$vas_epai_target_vff"/>
+          <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] potential target score=' + @$vas_epai_target_vff.idcode + ' ' + @$vas_epai_target_vff.knownname + ' rawScore=' + $vas_epai_target_score + ' focusBonus=' + $vas_epai_score_focus_bonus + ' shipBonus=' + $vas_epai_score_ship_bonus + ' matchupBonus=' + $vas_epai_target_score_matchup + ' distanceBonus=' + $vas_epai_target_score_distance" append="true"/>
+          <continue/>
+        </do_if>
+
+        <!-- Self force calculation and checks -->
+        <do_if value="not @global.$vas_epai_fleetforce_cache.{this.ship.owner}.{this.ship}">
+          <continue/>
+        </do_if>
+        <set_value name="$vas_epai_self_vff_force" exact="global.$vas_epai_fleetforce_cache.{this.ship.owner}.{this.ship}.$value"/>
+        <set_value name="$vas_epai_force_estimation_multiplier" min="[1.0 - $vas_epai_force_estimation_deviation, 0.1].max" max="1.0 + $vas_epai_force_estimation_deviation"/>
+        <set_value name="$vas_epai_self_vff_estimated_force" exact="$vas_epai_self_vff_force * $vas_epai_force_estimation_multiplier"/>
+        <set_value name="$vas_epai_self_force_ratio" exact="$vas_epai_self_vff_estimated_force / [$vas_epai_target_vff_estimated_force, 0.00000001].max"/>
+        <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] VFF self force target=' + @$vas_epai_target_vff.idcode + ' ' + @$vas_epai_target_vff.knownname + ' targetForce=' + $vas_epai_target_vff_force + ' targetEstimatedForce=' + $vas_epai_target_vff_estimated_force + ' selfVff=' + @this.ship.idcode + ' ' + @this.ship.knownname + ' selfForce=' + $vas_epai_self_vff_force + ' selfEstimatedForce=' + $vas_epai_self_vff_estimated_force + ' selfForceRatio=' + $vas_epai_self_force_ratio" append="true"/>
+
+        <!-- Check if self force is enough - if it is, add the target to potential targets list -->
+        <do_if value="$vas_epai_self_force_ratio ge 1">
+          <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] accept VFF self-initiation=' + @$vas_epai_target_vff.idcode + ' ' + @$vas_epai_target_vff.knownname + ' owner=' + @$vas_epai_target_vff.owner + ' trueowner=' + @$vas_epai_target_vff.trueowner + ' relationToSelf=' + @$vas_epai_target_vff.relationto.{this.ship} + ' selfRelationToTarget=' + this.ship.relationto.{$vas_epai_target_vff} + ' selfOwnerToTargetOwner=' + this.ship.owner.relationto.{$vas_epai_target_vff.owner} + ' targetOwnerToSelfOwner=' + $vas_epai_target_vff.owner.relationto.{this.ship.owner} + ' selfOwnerToTargetTrueOwner=' + this.ship.owner.relationto.{$vas_epai_target_vff.trueowner} + ' targetTrueOwnerToSelfOwner=' + $vas_epai_target_vff.trueowner.relationto.{this.ship.owner} + ' mayattack=' + this.mayattack.{$vas_epai_target_vff} + ' targetForce=' + $vas_epai_target_vff_force + ' targetEstimatedForce=' + $vas_epai_target_vff_estimated_force + ' selfVffForce=' + $vas_epai_self_vff_force + ' selfVffEstimatedForce=' + $vas_epai_self_vff_estimated_force + ' selfForceRatio=' + $vas_epai_self_force_ratio" append="true"/>
+          <set_value name="$vas_epai_target_score" exact="$vas_epai_score_ship_bonus + $vas_epai_target_score_matchup + $vas_epai_target_score_distance"/>
+          <set_value name="$vas_epai_potential_target_scores.{$vas_epai_target_vff}" exact="$vas_epai_target_score"/>
+          <append_to_list name="$vas_epai_potential_targets" exact="$vas_epai_target_vff"/>
+          <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] potential target score=' + @$vas_epai_target_vff.idcode + ' ' + @$vas_epai_target_vff.knownname + ' rawScore=' + $vas_epai_target_score + ' shipBonus=' + $vas_epai_score_ship_bonus + ' matchupBonus=' + $vas_epai_target_score_matchup + ' distanceBonus=' + $vas_epai_target_score_distance" append="true"/>
+          <continue/>
+        </do_if>
+
+        <!-- Pending same-faction patrols are discounted because they may choose another target first. -->
+        <do_all exact="$vas_epai_friendly_sector_vffs.count" counter="$vas_epai_j">
+          <set_value name="$vas_epai_pending_patrol_vff" exact="$vas_epai_friendly_sector_vffs.{$vas_epai_j}"/>
+          <do_if value="$vas_epai_pending_patrol_vff == this.ship
+                    or $vas_epai_pending_patrol_vff.owner != this.ship.owner
+                    or @$vas_epai_pending_patrol_vff.order.id != 'Patrol'">
+            <continue/>
+          </do_if>
+          <do_if value="not @global.$vas_epai_fleetforce_cache.{$vas_epai_pending_patrol_vff.owner}.{$vas_epai_pending_patrol_vff}">
+            <continue/>
+          </do_if>
+          <set_value name="$vas_epai_pending_patrol_force" exact="global.$vas_epai_fleetforce_cache.{$vas_epai_pending_patrol_vff.owner}.{$vas_epai_pending_patrol_vff}.$value"/>
+          <set_value name="$vas_epai_force_estimation_multiplier" min="[1.0 - $vas_epai_force_estimation_deviation, 0.1].max" max="1.0 + $vas_epai_force_estimation_deviation"/>
+          <set_value name="$vas_epai_pending_patrol_estimated_force" exact="$vas_epai_pending_patrol_force * $vas_epai_force_estimation_multiplier"/>
+          <set_value name="$vas_epai_pending_patrol_force_ratio" exact="$vas_epai_pending_patrol_estimated_force / [$vas_epai_target_vff_estimated_force, 0.00000001].max * $vas_epai_pending_patrol_force_coefficient"/>
+          <set_value name="$vas_epai_self_force_ratio" exact="$vas_epai_self_force_ratio + $vas_epai_pending_patrol_force_ratio"/>
+          <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] VFF pending patrol target=' + @$vas_epai_target_vff.idcode + ' ' + @$vas_epai_target_vff.knownname + ' targetForce=' + $vas_epai_target_vff_force + ' targetEstimatedForce=' + $vas_epai_target_vff_estimated_force + ' vff=' + @$vas_epai_pending_patrol_vff.idcode + ' ' + @$vas_epai_pending_patrol_vff.knownname + ' force=' + $vas_epai_pending_patrol_force + ' estimatedForce=' + $vas_epai_pending_patrol_estimated_force + ' discountedForceRatio=' + $vas_epai_pending_patrol_force_ratio + ' totalForceRatio=' + $vas_epai_self_force_ratio" append="true"/>
+          <do_if value="$vas_epai_self_force_ratio ge 1">
+            <break/>
+          </do_if>
+        </do_all>
+
+        <!-- Final check - is the combined patrol force enough to overpower the enemy? -->
+        <do_if value="$vas_epai_self_force_ratio ge 1">
+          <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] accept VFF patrol-initiation=' + @$vas_epai_target_vff.idcode + ' ' + @$vas_epai_target_vff.knownname + ' owner=' + @$vas_epai_target_vff.owner + ' trueowner=' + @$vas_epai_target_vff.trueowner + ' relationToSelf=' + @$vas_epai_target_vff.relationto.{this.ship} + ' selfRelationToTarget=' + this.ship.relationto.{$vas_epai_target_vff} + ' selfOwnerToTargetOwner=' + this.ship.owner.relationto.{$vas_epai_target_vff.owner} + ' targetOwnerToSelfOwner=' + $vas_epai_target_vff.owner.relationto.{this.ship.owner} + ' selfOwnerToTargetTrueOwner=' + this.ship.owner.relationto.{$vas_epai_target_vff.trueowner} + ' targetTrueOwnerToSelfOwner=' + $vas_epai_target_vff.trueowner.relationto.{this.ship.owner} + ' mayattack=' + this.mayattack.{$vas_epai_target_vff} + ' targetForce=' + $vas_epai_target_vff_force + ' targetEstimatedForce=' + $vas_epai_target_vff_estimated_force + ' combinedForceRatio=' + $vas_epai_self_force_ratio + ' pendingPatrolForceCoefficient=' + $vas_epai_pending_patrol_force_coefficient" append="true"/>
+          <set_value name="$vas_epai_target_score" exact="$vas_epai_score_ship_bonus + $vas_epai_target_score_matchup + $vas_epai_target_score_distance"/>
+          <set_value name="$vas_epai_potential_target_scores.{$vas_epai_target_vff}" exact="$vas_epai_target_score"/>
+          <append_to_list name="$vas_epai_potential_targets" exact="$vas_epai_target_vff"/>
+          <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] potential target score=' + @$vas_epai_target_vff.idcode + ' ' + @$vas_epai_target_vff.knownname + ' rawScore=' + $vas_epai_target_score + ' shipBonus=' + $vas_epai_score_ship_bonus + ' matchupBonus=' + $vas_epai_target_score_matchup + ' distanceBonus=' + $vas_epai_target_score_distance" append="true"/>
+          <continue/>
+        </do_if>
+        <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] skip VFF insufficient force=' + @$vas_epai_target_vff.idcode + ' ' + @$vas_epai_target_vff.knownname + ' targetForce=' + $vas_epai_target_vff_force + ' targetEstimatedForce=' + $vas_epai_target_vff_estimated_force + ' committedForceRatio=' + $vas_epai_committed_force_ratio + ' shipJoinThreshold=' + $vas_epai_ship_join_threshold + ' selfVffForce=' + $vas_epai_self_vff_force + ' selfVffEstimatedForce=' + $vas_epai_self_vff_estimated_force + ' combinedForceRatio=' + $vas_epai_self_force_ratio + ' pendingPatrolForceCoefficient=' + $vas_epai_pending_patrol_force_coefficient" append="true"/>
+      </do_all>
+
+      <do_if value="$vas_epai_potential_targets.count == 0">
+        <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] no potential targets; resume=moveto'" append="true"/>
+        <set_value name="$vas_epai_check" exact="false"/>
+        <!-- wait is ok here because no synchronicity-reliant actions would be taken -->
+        <wait min="1ms" max="2ms"/>
+        <return value="null">
+          <retval name="potential_target_scores" value="null"/>
+          <retval name="blocking_stations" value="null"/>
+          <retval name="sector_enemy_stations" value="null"/>
+        </return>
+      </do_if>
+
+      <!-- Final target ordering lives here, not in callers. Route penalty is lazy:
+           sort raw scores once, then only evaluate candidates that can still win. -->
+      <sort_list list="$vas_epai_potential_targets" sortbyvalue="$vas_epai_potential_target_scores.{loop.element}" sortdescending="true"/>
+
+      <!--
+        Route penalty models enemy force sitting close enough to the self->target travel line
+        to plausibly interfere before or during approach. Below the minimum route length, the
+        target is close enough to walk to directly and the whole check is skipped.
+
+        corridor radius = clamp(corridorMin, targetDistance * corridorFraction, corridorMax)
+        blocker counts only if its projection onto the route falls strictly between the start
+        and end margins (near-self and near-target blockers are ignored either way).
+
+        per-blocker weight = edgeWeight + (1 - edgeWeight) * (1 - (perpDist / corridorRadius)^2)
+          -> 1.0 exactly on the line, edgeWeight at the corridor edge, quadratic falloff between
+             (stays close to full weight near the line, drops off faster near the edge).
+
+        blockingForce  = sum(blockerForce * weight) over enemy VFFs and stations on the route
+        forceRatio     = blockingForce / selfForce
+        penalty        = clamp(forceRatio * perForceRatio, 0, cap)
+        adjustedScore  = rawScore - penalty
+
+        Examples with current values (perForceRatio=4000, edgeWeight=1/3, cap=8000):
+          single 1:1-force blocker dead-center on the line   -> penalty = 1 * 4000 = 4000
+          single 1:1-force blocker at the corridor edge      -> penalty = 1 * 4000 * 1/3 = 1333
+          combined 2:1-or-greater force on the line          -> penalty = cap = 8000
+
+        Route penalty applies on top of the raw score from the main scan loop (see the score
+        breakdown above: focus 7000 + type 6000/5000 + matchup 0..4000 + distance 0..4000).
+        Worked examples, rawScore -> adjustedScore:
+          21000 (max possible: focus + ship + full matchup + full distance), max penalty (8000) -> 13000
+          18000 (focus + ship + full matchup + partial distance),  lesser penalty (3500)        -> 14500
+          16000 (focus + station + full matchup, far distance),    on-line penalty (4000)       -> 12000
+          14000 (no focus, ship, full matchup, far distance),      no blockers on route         -> 14000
+          10000 (no focus, ship, mismatched size, far distance),   no blockers on route         -> 10000
+        this example shows that 18000 -> 14500 will make the best target,
+        16000's penalty would still be processed, 14000 would not get processed because of the
+        "Score after penalty is greater than raw score of next item" check
+      -->
+      <!-- Minimum route length - if less, checks are skipped and penalty is not applied -->
+      <set_value name="$vas_epai_route_penalty_route_length_min" exact="20km"/>
+      <set_value name="$vas_epai_route_penalty_corridor_min" exact="10km"/>
+      <set_value name="$vas_epai_route_penalty_corridor_max" exact="60km"/>
+      <set_value name="$vas_epai_route_penalty_corridor_fraction" exact="0.16"/>
+      <set_value name="$vas_epai_route_penalty_edge_weight" exact="1.0 / 3.0"/>
+      <set_value name="$vas_epai_route_penalty_per_force_ratio" exact="4000"/>
+      <set_value name="$vas_epai_route_penalty_cap" exact="8000"/>
+
+      <!-- Track the best adjusted candidate while walking raw-score order. -->
+      <remove_value name="$vas_epai_route_best_adjusted_target"/>
+      <set_value name="$vas_epai_route_best_adjusted_index" exact="0"/>
+      <set_value name="$vas_epai_route_best_adjusted_score" exact="-999999999"/>
+      <set_value name="$vas_epai_route_candidate_index" exact="1"/>
+
+      <set_value name="$vas_epai_route_self_force" exact="0"/>
+      <do_if value="@global.$vas_epai_fleetforce_cache.{this.ship.owner}.{this.ship}">
+        <set_value name="$vas_epai_route_self_force" exact="global.$vas_epai_fleetforce_cache.{this.ship.owner}.{this.ship}.$value"/>
+      </do_if>
+
+      <set_value name="$vas_epai_route_blocking_stations_per_candidate" exact="table[]"/>
+
+      <!-- Blocking force above which the penalty is already saturated at the cap; lets the
+           accumulation loops below stop early instead of scanning remaining blockers for nothing. -->
+      <set_value name="$vas_epai_route_blocking_force_cap_threshold" exact="[$vas_epai_route_self_force, 0.00000001].max * $vas_epai_route_penalty_cap / $vas_epai_route_penalty_per_force_ratio"/>
+
+      <do_while value="$vas_epai_route_candidate_index le $vas_epai_potential_targets.count">
+        <!-- Candidate starts with raw score; route blockers can only lower it. -->
+        <set_value name="$vas_epai_route_candidate" exact="$vas_epai_potential_targets.{$vas_epai_route_candidate_index}"/>
+        <set_value name="$vas_epai_route_candidate_distance" exact="this.ship.distanceto.{$vas_epai_route_candidate}"/>
+        <set_value name="$vas_epai_route_blocking_stations_per_candidate.{$vas_epai_route_candidate}" exact="[]"/>
+
+        <!-- Close raw-best candidate is accepted without route penalty checks. -->
+        <do_if value="$vas_epai_route_candidate_distance lt $vas_epai_route_penalty_route_length_min">
+          <set_value name="$vas_epai_route_best_adjusted_target" exact="$vas_epai_route_candidate"/>
+          <set_value name="$vas_epai_route_best_adjusted_index" exact="$vas_epai_route_candidate_index"/>
+          <set_value name="$vas_epai_route_best_adjusted_score" exact="$vas_epai_potential_target_scores.{$vas_epai_route_candidate}"/>
+          <break/>
+        </do_if>
+
+        <set_value name="$vas_epai_route_candidate_raw_score" exact="$vas_epai_potential_target_scores.{$vas_epai_route_candidate}"/>
+        <set_value name="$vas_epai_route_candidate_adjusted_score" exact="$vas_epai_route_candidate_raw_score"/>
+        <set_value name="$vas_epai_route_blocking_force" exact="0"/>
+        <set_value name="$vas_epai_route_blocking_count" exact="0"/>
+
+        <!-- Build the self-to-candidate line and its corridor. -->
+        <create_position name="$vas_epai_route_self_pos" space="this.ship.sector" object="this.ship"/>
+        <create_position name="$vas_epai_route_candidate_pos" space="this.ship.sector" object="$vas_epai_route_candidate"/>
+        <set_value name="$vas_epai_route_dx" exact="$vas_epai_route_candidate_pos.x - $vas_epai_route_self_pos.x"/>
+        <set_value name="$vas_epai_route_dy" exact="$vas_epai_route_candidate_pos.y - $vas_epai_route_self_pos.y"/>
+        <set_value name="$vas_epai_route_dz" exact="$vas_epai_route_candidate_pos.z - $vas_epai_route_self_pos.z"/>
+        <set_value name="$vas_epai_route_line_len_sq" exact="$vas_epai_route_dx * $vas_epai_route_dx + $vas_epai_route_dy * $vas_epai_route_dy + $vas_epai_route_dz * $vas_epai_route_dz"/>
+        <set_value name="$vas_epai_route_corridor_radius" exact="[[$vas_epai_route_penalty_corridor_min, $vas_epai_route_candidate_distance * $vas_epai_route_penalty_corridor_fraction].max, $vas_epai_route_penalty_corridor_max].min"/>
+        <set_value name="$vas_epai_route_corridor_radius_sq" exact="$vas_epai_route_corridor_radius * $vas_epai_route_corridor_radius"/>
+
+        <!-- Guard for Justin Case - attacker and the target are in one spot. This exists to make my LLM agent happy -->
+        <do_if value="$vas_epai_route_line_len_sq == 0">
+          <set_value name="$vas_epai_route_candidate_index" exact="$vas_epai_route_candidate_index + 1"/>
+          <continue/>
+        </do_if>
+
+        <!-- Enemy stations on the route add local station force. -->
+        <do_all exact="$vas_epai_valid_sector_enemy_stations.count" counter="$vas_epai_route_i">
+
+          <set_value name="$vas_epai_route_blocker" exact="$vas_epai_valid_sector_enemy_stations.{$vas_epai_route_i}"/>
+          <do_if value="$vas_epai_route_blocker == $vas_epai_route_candidate">
+            <continue/>
+          </do_if>
+
+          <!-- Stations cannot move into the route, so use fixed corridor radius plus station bounds. -->
+          <set_value name="$vas_epai_route_station_corridor_radius" exact="$vas_epai_route_penalty_corridor_min + ($vas_epai_route_blocker.size / 2.0)"/>
+          <set_value name="$vas_epai_route_station_corridor_radius_sq" exact="$vas_epai_route_station_corridor_radius * $vas_epai_route_station_corridor_radius"/>
+
+          <!-- Cheap prefilter: stations beyond this route leg plus their corridor radius cannot block it. -->
+          <do_if value="$vas_epai_route_blocker.distanceto.{this.ship} gt ($vas_epai_route_candidate_distance + $vas_epai_route_station_corridor_radius)">
+            <continue/>
+          </do_if>
+
+          <create_position name="$vas_epai_route_blocker_pos" space="this.ship.sector" object="$vas_epai_route_blocker"/>
+          <set_value name="$vas_epai_route_bx" exact="$vas_epai_route_blocker_pos.x - $vas_epai_route_self_pos.x"/>
+          <set_value name="$vas_epai_route_by" exact="$vas_epai_route_blocker_pos.y - $vas_epai_route_self_pos.y"/>
+          <set_value name="$vas_epai_route_bz" exact="$vas_epai_route_blocker_pos.z - $vas_epai_route_self_pos.z"/>
+          <set_value name="$vas_epai_route_dot" exact="$vas_epai_route_bx * $vas_epai_route_dx + $vas_epai_route_by * $vas_epai_route_dy + $vas_epai_route_bz * $vas_epai_route_dz"/>
+
+          <!-- Target-near stations are ignored only if they are outside the target-end approach cone.
+               This avoids treating a station cluster around the target as fully impassable while still
+               keeping stations that intersect the actual final approach corridor. -->
+          <do_if value="$vas_epai_route_blocker.distanceto.{$vas_epai_route_candidate} le $vas_epai_route_station_corridor_radius">
+            <set_value name="$vas_epai_route_target_cone_blocker_dist_sq" exact="$vas_epai_route_bx * $vas_epai_route_bx + $vas_epai_route_by * $vas_epai_route_by + $vas_epai_route_bz * $vas_epai_route_bz"/>
+            <set_value name="$vas_epai_route_target_cone_perp_dist_sq" exact="$vas_epai_route_target_cone_blocker_dist_sq - (($vas_epai_route_dot * $vas_epai_route_dot) / $vas_epai_route_line_len_sq)"/>
+            <set_value name="$vas_epai_route_target_cone_distance_from_target" exact="$vas_epai_route_candidate_distance - ($vas_epai_route_dot / $vas_epai_route_candidate_distance)"/>
+            <set_value name="$vas_epai_route_target_cone_radius" exact="$vas_epai_route_station_corridor_radius * ([$vas_epai_route_target_cone_distance_from_target, 0m].max / $vas_epai_route_station_corridor_radius)"/>
+            <set_value name="$vas_epai_route_target_cone_radius_sq" exact="$vas_epai_route_target_cone_radius * $vas_epai_route_target_cone_radius"/>
+            <do_if value="$vas_epai_route_target_cone_distance_from_target le 0m
+                      or $vas_epai_route_target_cone_distance_from_target gt $vas_epai_route_station_corridor_radius
+                      or $vas_epai_route_target_cone_perp_dist_sq gt $vas_epai_route_target_cone_radius_sq">
+              <continue/>
+            </do_if>
+          </do_if>
+
+          <!-- Projection must fall on the route segment, not behind self or past candidate. -->
+          <do_if value="$vas_epai_route_dot le 0 or $vas_epai_route_dot gt $vas_epai_route_line_len_sq">
+            <continue/>
+          </do_if>
+
+          <set_value name="$vas_epai_route_blocker_dist_sq" exact="$vas_epai_route_bx * $vas_epai_route_bx + $vas_epai_route_by * $vas_epai_route_by + $vas_epai_route_bz * $vas_epai_route_bz"/>
+          <set_value name="$vas_epai_route_perp_dist_sq" exact="$vas_epai_route_blocker_dist_sq - (($vas_epai_route_dot * $vas_epai_route_dot) / $vas_epai_route_line_len_sq)"/>
+
+          <!-- Perpendicular distance (normale) to route line must fit inside the corridor. -->
+          <do_if value="$vas_epai_route_perp_dist_sq gt $vas_epai_route_station_corridor_radius_sq">
+            <continue/>
+          </do_if>
+
+          <!-- Calcualte and apply the station's impact -->
+          <set_value name="$vas_epai_route_blocker_hull_shield" exact="$vas_epai_route_blocker.hull + $vas_epai_route_blocker.shield"/>
+          <set_value name="$vas_epai_route_blocker_force" exact="($vas_epai_route_blocker.dps.all / global.$vas_epai_ship_force_baselines.$dps)f * ($vas_epai_route_blocker_hull_shield / global.$vas_epai_ship_force_baselines.$durability)f"/>
+          <set_value name="$vas_epai_route_blocking_force" exact="$vas_epai_route_blocking_force + $vas_epai_route_blocker_force * ($vas_epai_route_penalty_edge_weight + (1 - $vas_epai_route_penalty_edge_weight) * (1 - $vas_epai_route_perp_dist_sq / $vas_epai_route_station_corridor_radius_sq))"/>
+          <set_value name="$vas_epai_route_blocking_count" exact="$vas_epai_route_blocking_count + 1"/>
+
+          <!-- Add station as a blocking station -->
+          <append_to_list name="$vas_epai_route_blocking_stations_per_candidate.{$vas_epai_route_candidate}" exact="$vas_epai_route_blocker"/>
+
+          <!-- Penalty saturation early break is delibirately not applied here.
+               It's so to make sure that all blocking stations are known to pass them with retval later -->
+        </do_all>
+
+        <!-- Enemy VFFs on the route add cached visible force. -->
+        <do_all exact="$vas_epai_valid_sector_enemy_vffs.count" counter="$vas_epai_route_i">
+          <!-- Penalty is already saturated at the cap; further blockers can't lower the score more. -->
+          <do_if value="$vas_epai_route_blocking_force ge $vas_epai_route_blocking_force_cap_threshold">
+            <break/>
+          </do_if>
+
+          <set_value name="$vas_epai_route_blocker" exact="$vas_epai_valid_sector_enemy_vffs.{$vas_epai_route_i}"/>
+          <do_if value="$vas_epai_route_blocker == $vas_epai_route_candidate
+                    or not @global.$vas_epai_fleetforce_cache.{this.ship.owner}.{$vas_epai_route_blocker}">
+            <continue/>
+          </do_if>
+
+          <!-- Cheap prefilter: VFFs beyond this route leg plus corridor radius cannot block it. -->
+          <do_if value="$vas_epai_route_blocker.distanceto.{this.ship} gt ($vas_epai_route_candidate_distance + $vas_epai_route_corridor_radius)">
+            <continue/>
+          </do_if>
+
+          <create_position name="$vas_epai_route_blocker_pos" space="this.ship.sector" object="$vas_epai_route_blocker"/>
+          <set_value name="$vas_epai_route_bx" exact="$vas_epai_route_blocker_pos.x - $vas_epai_route_self_pos.x"/>
+          <set_value name="$vas_epai_route_by" exact="$vas_epai_route_blocker_pos.y - $vas_epai_route_self_pos.y"/>
+          <set_value name="$vas_epai_route_bz" exact="$vas_epai_route_blocker_pos.z - $vas_epai_route_self_pos.z"/>
+          <set_value name="$vas_epai_route_dot" exact="$vas_epai_route_bx * $vas_epai_route_dx + $vas_epai_route_by * $vas_epai_route_dy + $vas_epai_route_bz * $vas_epai_route_dz"/>
+
+          <!-- Projection must fall on the route segment, not behind self or past candidate. -->
+          <do_if value="$vas_epai_route_dot le 0 or $vas_epai_route_dot gt $vas_epai_route_line_len_sq">
+            <continue/>
+          </do_if>
+
+          <set_value name="$vas_epai_route_blocker_dist_sq" exact="$vas_epai_route_bx * $vas_epai_route_bx + $vas_epai_route_by * $vas_epai_route_by + $vas_epai_route_bz * $vas_epai_route_bz"/>
+          <set_value name="$vas_epai_route_perp_dist_sq" exact="$vas_epai_route_blocker_dist_sq - (($vas_epai_route_dot * $vas_epai_route_dot) / $vas_epai_route_line_len_sq)"/>
+
+          <!-- Perpendicular distance (normale) to route line must fit inside the corridor. -->
+          <do_if value="$vas_epai_route_perp_dist_sq gt $vas_epai_route_corridor_radius_sq">
+            <continue/>
+          </do_if>
+
+          <set_value name="$vas_epai_route_blocking_force" exact="$vas_epai_route_blocking_force + global.$vas_epai_fleetforce_cache.{this.ship.owner}.{$vas_epai_route_blocker}.$value * ($vas_epai_route_penalty_edge_weight + (1 - $vas_epai_route_penalty_edge_weight) * (1 - $vas_epai_route_perp_dist_sq / $vas_epai_route_corridor_radius_sq))"/>
+          <set_value name="$vas_epai_route_blocking_count" exact="$vas_epai_route_blocking_count + 1"/>
+        </do_all>
+
+        <!-- No enemy force found along the way to the target -
+             means current target is not penalized, which makes it the best score target -->
+        <do_if value="$vas_epai_route_blocking_force == 0">
+          <set_value name="$vas_epai_route_best_adjusted_target" exact="$vas_epai_route_candidate"/>
+          <set_value name="$vas_epai_route_best_adjusted_index" exact="$vas_epai_route_candidate_index"/>
+          <set_value name="$vas_epai_route_best_adjusted_score" exact="$vas_epai_route_candidate_raw_score"/>
+          <break/>
+        </do_if>
+
+        <!-- Convert blocking force into a bounded score penalty. -->
+        <set_value name="$vas_epai_route_force_ratio" exact="$vas_epai_route_blocking_force / [$vas_epai_route_self_force, 0.00000001].max"/>
+        <set_value name="$vas_epai_route_penalty" exact="[[$vas_epai_route_force_ratio * $vas_epai_route_penalty_per_force_ratio, 0].max, $vas_epai_route_penalty_cap].min"/>
+        <set_value name="$vas_epai_route_candidate_adjusted_score" exact="$vas_epai_route_candidate_raw_score - $vas_epai_route_penalty"/>
+        <set_value name="$vas_epai_potential_target_scores.{$vas_epai_route_candidate}" exact="$vas_epai_route_candidate_adjusted_score"/>
+        <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] route penalty target=' + @$vas_epai_route_candidate.idcode + ' ' + @$vas_epai_route_candidate.knownname + ' rawScore=' + $vas_epai_route_candidate_raw_score + ' adjustedScore=' + $vas_epai_route_candidate_adjusted_score + ' penalty=' + $vas_epai_route_penalty + ' blockingCount=' + $vas_epai_route_blocking_count + ' blockingForce=' + $vas_epai_route_blocking_force + ' selfForce=' + $vas_epai_route_self_force + ' forceRatio=' + $vas_epai_route_force_ratio + ' corridorRadius=' + $vas_epai_route_corridor_radius" append="true"/>
+
+        <!-- Keep the best adjusted candidate seen so far. -->
+        <do_if value="$vas_epai_route_candidate_adjusted_score gt $vas_epai_route_best_adjusted_score">
+          <set_value name="$vas_epai_route_best_adjusted_target" exact="$vas_epai_route_candidate"/>
+          <set_value name="$vas_epai_route_best_adjusted_index" exact="$vas_epai_route_candidate_index"/>
+          <set_value name="$vas_epai_route_best_adjusted_score" exact="$vas_epai_route_candidate_adjusted_score"/>
+        </do_if>
+
+        <!-- Stop once unchecked raw scores cannot overtake the best adjusted score. -->
+        <do_if value="$vas_epai_route_candidate_index ge $vas_epai_potential_targets.count">
+          <break/>
+        </do_if>
+
+        <set_value name="$vas_epai_route_next_index" exact="$vas_epai_route_candidate_index + 1"/>
+        <set_value name="$vas_epai_route_next_target" exact="$vas_epai_potential_targets.{$vas_epai_route_next_index}"/>
+        <set_value name="$vas_epai_route_next_raw_score" exact="$vas_epai_potential_target_scores.{$vas_epai_route_next_target}"/>
+        <!-- Score after penalty is greater than raw score of next item - means we've found the winner -->
+        <do_if value="$vas_epai_route_best_adjusted_score ge $vas_epai_route_next_raw_score">
+          <break/>
+        </do_if>
+
+        <set_value name="$vas_epai_route_candidate_index" exact="$vas_epai_route_candidate_index + 1"/>
+      </do_while>
+
+      <!-- Put the final winner first; callers consume index 1. -->
+      <do_if value="$vas_epai_route_best_adjusted_index gt 1">
+        <set_value name="$vas_epai_route_old_first_target" exact="$vas_epai_potential_targets.{1}"/>
+        <set_value name="$vas_epai_potential_targets.{1}" exact="$vas_epai_route_best_adjusted_target"/>
+        <set_value name="$vas_epai_potential_targets.{$vas_epai_route_best_adjusted_index}" exact="$vas_epai_route_old_first_target"/>
+      </do_if>
+
+      <set_value name="$vas_epai_selected_target_blocking_stations" exact="$vas_epai_route_blocking_stations_per_candidate.{$vas_epai_potential_targets.{1}}"/>
+
+      <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] potential targets=' + $vas_epai_potential_targets.count + ' selected=' + @$vas_epai_potential_targets.{1}.idcode + ' ' + @$vas_epai_potential_targets.{1}.knownname + ' score=' + @$vas_epai_potential_target_scores.{$vas_epai_potential_targets.{1}} + ' resume=vas_epai_enabled'" append="true"/>
+      <return value="$vas_epai_potential_targets">
+        <retval name="potential_target_scores" value="$vas_epai_potential_target_scores"/>
+        <retval name="blocking_stations" value="$vas_epai_selected_target_blocking_stations"/>
+        <retval name="sector_enemy_stations" value="$vas_epai_valid_sector_enemy_stations"/>
+      </return>
+    </actions>
+  </attention>
+</aiscript>

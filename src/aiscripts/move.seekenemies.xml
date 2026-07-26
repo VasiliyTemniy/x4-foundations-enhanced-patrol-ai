@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<diff>
+  <!-- EPAI enable flag passed by Patrol. -->
+  <!-- FRAGILITY - NONE: adds one optional move.seekenemies parameter.
+       INJECTION FAIL IMPACT: if this injection fails, move.seekenemies cannot receive Patrol's resolved
+                              EPAI enable flag, which means the whole mod would stop working for Patrol scans. -->
+  <add sel="//params">
+    <param name="vas_epai_enabled" default="false"/>
+  </add>
+
+  <!-- Wake up because the WakeTick MD cue fired. -->
+  <!-- FRAGILITY - LOW: selector anchors to vanilla's move_to interrupt condition list.
+       INJECTION FAIL IMPACT: if this injection fails, EPAI heartbeat signals will not interrupt Patrol movement,
+                              which means the whole mod stops working. -->
+  <add sel="//move_to/interrupt/conditions/check_any" pos="prepend">
+    <event_object_signalled object="this.sector" param="'wake_up_patrol'" check="false" comment="patrol must work even if no other interrupt events happen"/>
+  </add>
+
+  <!-- Convert EPAI wake signals into throttled sector scans, then swallow the heartbeat. -->
+  <!-- FRAGILITY - LOW: selector anchors to vanilla's move_to interrupt actions.
+       INJECTION FAIL IMPACT: if this injection fails, wake_up_patrol signals are not turned into EPAI scan attempts,
+                              which means the whole mod stops working. -->
+  <add sel="//move_to/interrupt/actions" pos="prepend">
+    <!-- Run enhanced patrol scan at most once per configured interval -->
+    <set_value name="$vas_epai_check" exact="false"/>
+    <set_value name="$vas_epai_interval" exact="player.entity.$vas_epai_interval"/>
+    <do_if value="@$vas_epai_enabled
+              and event.name == 'event_object_signalled'
+              and event.param == 'wake_up_patrol'
+              and not $recon
+              and not $plunder
+              and (not @$vas_epai_last_scan_time or $vas_epai_last_scan_time + $vas_epai_interval lt player.age)">
+      <set_value name="$vas_epai_check" exact="true"/>
+      <set_value name="$vas_epai_last_scan_time" exact="player.age"/>
+      <resume label="vas_epai_scan"/>
+    </do_if>
+
+    <!-- The wake heartbeat is only for EPAI scan timing; do not let vanilla signal handling treat it as an enemy report. -->
+    <do_if value="event.name == 'event_object_signalled' and event.param == 'wake_up_patrol'">
+      <set_value name="$vas_epai_check" exact="false"/>
+      <resume label="moveto"/>
+    </do_if>
+
+  </add>
+
+  <!-- EPAI scan continuation reached from the wake interrupt above. -->
+  <!-- FRAGILITY - MEDIUM: selector depends on vanilla's move_to layout.
+       INJECTION FAIL IMPACT: if this injection fails, EPAI wake interrupts can request a scan but
+                              no sector-wide EPAI scan runs, which means the whole mod stops working. -->
+  <add sel="//move_to" pos="after">
+    <label name="vas_epai_scan"/>
+
+    <set_value name="$vas_epai_should_run_scan_engine" exact="@$vas_epai_enabled and @$vas_epai_check and not $recon and not $plunder"/>
+
+    <do_if value="$vas_epai_should_run_scan_engine">
+      <set_value name="$vas_epai_debug_chance" exact="if (@player.entity.$vas_epai_debug_chance + '') == 'null' then 0 else player.entity.$vas_epai_debug_chance"/>
+
+      <!-- One sector-wide wake signals every patrol ship in the sector in the same tick, so nobody
+           can see a sibling's Attack order issued moments earlier this same wake - it isn't committed
+           yet. Ticket per sector (reset by WakeTick right before signalling) staggers same-tick ships
+           by a few ms each, enough to cross into the next tick so earlier commits become visible. -->
+      <set_value name="$vas_epai_wake_ticket" exact="if (@global.$vas_epai_wake_ticket.{this.sector} + '') == 'null' then 0 else global.$vas_epai_wake_ticket.{this.sector}"/>
+      <set_value name="global.$vas_epai_wake_ticket.{this.sector}" exact="$vas_epai_wake_ticket + 1"/>
+      <do_if value="$vas_epai_wake_ticket gt 0">
+        <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] scan deferred by ' + $vas_epai_wake_ticket * 3ms" append="true"/>
+        <wait exact="$vas_epai_wake_ticket * 3ms"/>
+      </do_if>
+
+      <run_script name="'lib.vas.epai.scan'" result="$vas_epai_potential_targets">
+        <save_retval name="potential_target_scores" variable="$vas_epai_potential_target_scores"/>
+        <save_retval name="blocking_stations" variable="$vas_epai_blocking_stations"/>
+        <save_retval name="sector_enemy_stations" variable="$vas_epai_sector_enemy_stations"/>
+      </run_script>
+      <do_if value="@$vas_epai_potential_targets and $vas_epai_potential_targets.count != 0">
+        <resume label="vas_epai_attack" />
+      </do_if>
+    </do_if>
+
+    <!-- <resume label="vas_epai_attack" /> was not called which means
+         @$vas_epai_potential_targets.count == 0 but the scan was tried - means it was still kinda skipped -->
+    <do_if value="$vas_epai_should_run_scan_engine">
+      <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] scan skipped; resume=moveto'" append="true"/>
+      <set_value name="$vas_epai_check" exact="false"/>
+      <resume label="moveto" />
+    </do_if>
+  </add>
+
+  <!-- Final EPAI target selection and Attack order issuing. -->
+  <!-- FRAGILITY - NONE: selector anchors to the actions tag, which must exist for aiscripts.
+       INJECTION FAIL IMPACT: if this injection fails, EPAI scans may find and score targets but cannot
+                              issue EPAI Attack orders, which means the mod would stop working. -->
+  <add sel="//attention/actions">
+    <label name="vas_epai_attack"/>
+
+    <!-- If the scan was not done or epai is not enabled at all -
+         skip right away to the end to make sure that no messed up
+         or uninitizalied values are read -->
+    <do_if value="not (@$vas_epai_enabled and @$vas_epai_check and @$vas_epai_potential_targets and $vas_epai_potential_targets.count gt 0)">
+      <resume label="vas_epai_engine_end"/>
+    </do_if>
+
+    <set_value name="$vas_epai_selected_target" exact="$vas_epai_potential_targets.{1}"/>
+    <set_value name="$vas_epai_selected_target_subordinates_flatlist" exact="null"/>
+    <do_if value="not $vas_epai_selected_target.isclass.station">
+      <!-- vff branch cache must still be present at this point -
+           GC will sweep only 3 seconds after the expiry -->
+      <set_value name="$vas_epai_selected_target_subordinates_flatlist" exact="@global.$vas_epai_vffbranch_cache.{this.ship.owner}.{$vas_epai_selected_target}.$value"/>
+    </do_if>
+
+    <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] issue attack from move.seekenemies target=' + $vas_epai_selected_target.idcode + ' ' + $vas_epai_selected_target.knownname + ' class=' + $vas_epai_selected_target.class + ' secondaryTargets=' + @$vas_epai_selected_target_subordinates_flatlist.count" append="true"/>
+
+    <run_script name="'lib.vas.epai.issue.attack'">
+      <param name="primarytarget" value="$vas_epai_selected_target"/>
+      <param name="secondarytargets" value="$vas_epai_selected_target_subordinates_flatlist"/>
+      <param name="blockingstations" value="$vas_epai_blocking_stations"/>
+      <param name="sectorenemystations" value="$vas_epai_sector_enemy_stations"/>
+    </run_script>
+
+    <label name="vas_epai_engine_end"/>
+  </add>
+</diff>

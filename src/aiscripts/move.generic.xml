@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<diff>
+  <!-- Internal flag for EPAI-owned approach movement. -->
+  <!-- FRAGILITY - NONE: adds one optional internal param to MoveGeneric.
+       INJECTION FAIL IMPACT: if this injection fails, EPAI ship-target approach movement cannot be marked,
+                              which means the sector guard below cannot distinguish EPAI movement
+                              from vanilla movement. -->
+  <add sel="/aiscript/order/params">
+    <param name="vas_epai_issued_by_epai" default="false" type="internal"/>
+  </add>
+
+  <!-- EPAI ship-target approach movement may use pursuetargets=true so MoveGeneric follows a moving target
+       inside the same sector. -->
+  <!-- FRAGILITY - LOW: label 'check' is a stable vanilla MoveGeneric control-flow anchor.
+       INJECTION FAIL IMPACT: if this injection fails, EPAI MoveGeneric approach legs can follow moving
+                              ship targets through gates, which means patrol ships may leave the patrol
+                              sector before the Attack order guard can stop them. -->
+  <add sel="//label[@name=&quot;check&quot;]" pos="after">
+    <do_if value="@$vas_epai_issued_by_epai">
+      <do_if value="@$destination.exists">
+        <do_if value="($destination.isclass.ship or $destination.isclass.station) and this.ship.sector and $destination.sector and this.ship.sector != $destination.sector">
+          <set_value name="$returnvalue" exact="true"/>
+          <resume label="cleanup"/>
+        </do_if>
+      </do_if>
+    </do_if>
+  </add>
+</diff>

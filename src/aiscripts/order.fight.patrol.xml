@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+CHANGES
+- Add a toggle to patrol and respond to the whole sector
+-->
+<diff>
+  <!-- Per-ship config -->
+  <!-- FRAGILITY - NONE: adds one optional Patrol order parameter.
+       INJECTION FAIL IMPACT: if this injection fails, the config toggle is not exposed on the order,
+                              which means the whole mod would stop working -->
+  <add pos="after" sel="//params/param[@name=&quot;space&quot;]">
+    <param name="vas_epai_enabled" required="false" type="bool" text="{2026062101, 101}" default="true"/>
+  </add>
+
+  <!-- Mod-wide Extension Options, mirrored from the config menu onto the player
+         blackboard (md/vas_enhanced_patrol_ai_config_menu.xml -> player.entity.$vas_epai_*).
+         Change this "sel" if you ever need these variables other than for calling
+         move.seekenemies with correct params. -->
+  <!-- FRAGILITY - LOW: selector anchors to vanilla's Patrol call into move.seekenemies.
+       INJECTION FAIL IMPACT: if this injection fails, EPAI config gates are not prepared for Patrol scans,
+                              which means the whole mod would stop working -->
+  <add pos="before" sel="//run_script[@name=&quot;'move.seekenemies'&quot;]">
+    <set_value name="$vas_epai_apply_to_xenon" exact="@player.entity.$vas_epai_apply_to_xenon"/>
+    <set_value name="$vas_epai_apply_to_khaak" exact="@player.entity.$vas_epai_apply_to_khaak"/>
+    <set_value name="$vas_epai_apply_to_npc_factions" exact="@player.entity.$vas_epai_apply_to_npc_factions"/>
+    <set_value name="$vas_epai_resolved" exact="if (@$vas_epai_enabled + '') == 'null' then true else $vas_epai_enabled"/>
+
+    <do_if value="$vas_epai_resolved">
+      <do_if value="this.ship.owner == faction.xenon and not $vas_epai_apply_to_xenon">
+        <set_value name="$vas_epai_resolved" exact="false"/>
+      </do_if>
+      <do_elseif value="this.ship.owner == faction.khaak and not $vas_epai_apply_to_khaak">
+        <set_value name="$vas_epai_resolved" exact="false"/>
+      </do_elseif>
+      <do_elseif value="this.ship.owner != faction.player and not $vas_epai_apply_to_npc_factions">
+        <set_value name="$vas_epai_resolved" exact="false"/>
+      </do_elseif>
+    </do_if>
+  </add>
+
+  <!-- Injection for move.seekenemies that does all the heavy-lifting -->
+  <!-- FRAGILITY - LOW: selector anchors to vanilla's Patrol call into move.seekenemies.
+       INJECTION FAIL IMPACT: if this injection fails, move.seekenemies will not receive the resolved EPAI enable flag from Patrol,
+                              which means the whole mod would stop working -->
+  <add sel="//run_script[@name=&quot;'move.seekenemies'&quot;]">
+    <param name="vas_epai_enabled" value="$vas_epai_resolved"/>
+  </add>
+
+  <!-- Injection to make sure that another round of vas_epai scan is done if necessary -->
+  <!-- FRAGILITY - MINIMAL: selector anchors to Patrol's stable start label.
+       INJECTION FAIL IMPACT: if this injection fails, Patrol still performs normal EPAI scans through move.seekenemies,
+                              but post-attack follow-up scans are not run before vanilla can return to patrol space. -->
+  <add pos="after" sel="//label[@name=&quot;start&quot;]">
+    <do_if value="@global.$vas_epai_should_scan_at_patrol_start.{this.ship}">
+      <resume label="vas_epai_secondary_scan"/>
+    </do_if>
+  </add>
+
+  <!-- Injection to make sure that another round of vas_epai scan is done if necessary -->
+  <!-- FRAGILITY - NONE: selector anchors to the actions tag, which must exist for aiscripts.
+       INJECTION FAIL IMPACT: if this injection fails, Patrol still performs normal EPAI scans through move.seekenemies,
+                              but post-attack follow-up scans are not run before vanilla can return to patrol space. -->
+  <add sel="//attention/actions">
+    <label name="vas_epai_secondary_scan"/>
+
+    <do_if value="@global.$vas_epai_should_scan_at_patrol_start.{this.ship}">
+      <remove_value name="global.$vas_epai_should_scan_at_patrol_start.{this.ship}"/>
+
+      <set_value name="$vas_epai_debug_chance" exact="if (@player.entity.$vas_epai_debug_chance + '') == 'null' then 0 else player.entity.$vas_epai_debug_chance"/>
+      <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] patrol start EPAI follow-up scan after previous attack ship=' + @this.ship.idcode + ' ' + @this.ship.knownname + ' order=' + @this.ship.order.id + ' currentSector=' + @this.ship.sector.knownname + ' currentZone=' + @this.ship.zone.knownname" append="true"/>
+
+      <run_script name="'lib.vas.epai.scan'" result="$vas_epai_potential_targets">
+        <save_retval name="potential_target_scores" variable="$vas_epai_potential_target_scores"/>
+        <save_retval name="blocking_stations" variable="$vas_epai_blocking_stations"/>
+        <save_retval name="sector_enemy_stations" variable="$vas_epai_sector_enemy_stations"/>
+      </run_script>
+
+      <!-- No targets found - resume from the start, but with
+           global.$vas_epai_should_scan_at_patrol_start.{this.ship} unset -->
+      <do_if value="not @$vas_epai_potential_targets or $vas_epai_potential_targets.count == 0">
+        <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] patrol start EPAI follow-up scan found no targets; resume=start'" append="true"/>
+        <resume label="start"/>
+      </do_if>
+
+      <set_value name="$vas_epai_selected_target" exact="$vas_epai_potential_targets.{1}"/>
+      <set_value name="$vas_epai_selected_target_subordinates_flatlist" exact="null"/>
+      <do_if value="not $vas_epai_selected_target.isclass.station">
+        <!-- vff branch cache must still be present at this point -
+             GC will sweep only 3 seconds after the expiry -->
+        <set_value name="$vas_epai_selected_target_subordinates_flatlist" exact="@global.$vas_epai_vffbranch_cache.{this.ship.owner}.{$vas_epai_selected_target}.$value"/>
+      </do_if>
+
+      <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] issue attack from patrol start follow-up target=' + $vas_epai_selected_target.idcode + ' ' + $vas_epai_selected_target.knownname + ' class=' + $vas_epai_selected_target.class + ' secondaryTargets=' + @$vas_epai_selected_target_subordinates_flatlist.count" append="true"/>
+
+      <run_script name="'lib.vas.epai.issue.attack'">
+        <param name="primarytarget" value="$vas_epai_selected_target"/>
+        <param name="secondarytargets" value="$vas_epai_selected_target_subordinates_flatlist"/>
+        <param name="blockingstations" value="$vas_epai_blocking_stations"/>
+        <param name="sectorenemystations" value="$vas_epai_sector_enemy_stations"/>
+      </run_script>
+
+      <!-- The same handoff as vanilla does after calling move.seekenemies -->
+      <wait min="1s" max="2s" />
+    </do_if>
+  </add>
+</diff>
