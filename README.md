@@ -92,27 +92,25 @@ This mod injects into vanilla AI scripts in place - that is the whole point: it
 changes how patrols decide and fight where that logic already lives. The patched
 vanilla scripts are:
 
-- **`move.seekenemies`** - **by far the most affected.** Holds the whole
-  enhanced-patrol engine: the sector sweep, shared-sight resolution, the
-  force/threat math, and the candidate-to-attack handoff. If you only check one
-  script for conflicts, check this one.
+- **`order.fight.attack.object`** - **the one to watch.** Carries the patrol's
+  fire-authorization flags into the actual attack, clamps pursuit to a travelled
+  distance budget, and rewrites the vanilla `mayattack` gate so deliberately
+  chosen civilian/economy targets are not thrown away. It holds the only
+  vanilla expression this mod *replaces* rather than adds to.
 - `order.fight.patrol` - entry point; reads the per-ship toggle and the faction
-  gates, then calls the sweep.
-- `order.fight.attack.object` - carries the patrol's shared-sight / fire-authorization
-  flags through to the actual attack.
-- `fight.attack.object.fighter` - fighter-side attack, same flag passthrough.
-- `fight.attack.object.bigtarget` - capital/big-target attack, same.
-- `move.attack.object.capital` - capital attack movement script, vanilla hostility checks
-  override.
-- `move.attack.object.capital.steering` - capital steering script, vanilla hostility checks
-  override.
-- `interrupt.disengage` - keeps shared-sight attacks from disengaging on sight/highway rules.
-- `lib.target.selection` - the shared target selector, so patrol-picked targets survive selection.
+  gates, and runs a follow-up scan after an attack finishes.
+- `move.seekenemies` - turns the wake heartbeat into a throttled sector scan and
+  hands the chosen target off to the attack helper.
+- `move.generic` - keeps an approach leg from chasing a target out of the sector.
+
+The decision engine itself is **not** a patch: it lives in this mod's own
+`lib.vas.epai.scan` and `lib.vas.epai.issue.attack` scripts, which are new files
+and cannot conflict with anything.
 
 Any other mod that edits the **same** vanilla scripts can potentially interfere
 with this mod's logic - not necessarily, but it is the most likely source of
-trouble, and **`move.seekenemies`** is the one to watch. If something behaves
-oddly, suspect an overlapping AI-script mod first.
+trouble, and **`order.fight.attack.object`** is the one to watch. If something
+behaves oddly, suspect an overlapping AI-script mod first.
 
 ## Credits
 
