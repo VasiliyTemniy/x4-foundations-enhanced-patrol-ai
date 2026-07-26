@@ -141,9 +141,9 @@
             <param name="allowothertargets" value="false"/>
             <param name="pursuetargets" value="true"/>
             <param name="pursuedistance" value="800km"/>
-            <param name="vas_epai_issued_by_epai" value="true"/>
-            <param name="vas_epai_skip_ship_mayattack" value="false"/>
-            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="vas_cl_issued_by_cl" value="true"/>
+            <param name="vas_cl_skip_ship_mayattack" value="false"/>
+            <param name="vas_cl_skip_station_mayattack" value="true"/>
             <param name="checkrelation" value="false"/>
             <param name="internalorder" value="true"/>
           </create_order>
@@ -191,9 +191,9 @@
             <param name="allowothertargets" value="false"/>
             <param name="pursuetargets" value="true"/>
             <param name="pursuedistance" value="800km"/>
-            <param name="vas_epai_issued_by_epai" value="true"/>
-            <param name="vas_epai_skip_ship_mayattack" value="false"/>
-            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="vas_cl_issued_by_cl" value="true"/>
+            <param name="vas_cl_skip_ship_mayattack" value="false"/>
+            <param name="vas_cl_skip_station_mayattack" value="true"/>
             <param name="checkrelation" value="false"/>
             <param name="internalorder" value="true"/>
           </create_order>
@@ -202,9 +202,9 @@
             <param name="allowothertargets" value="false"/>
             <param name="pursuetargets" value="true"/>
             <param name="pursuedistance" value="800km"/>
-            <param name="vas_epai_issued_by_epai" value="true"/>
-            <param name="vas_epai_skip_ship_mayattack" value="false"/>
-            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="vas_cl_issued_by_cl" value="true"/>
+            <param name="vas_cl_skip_ship_mayattack" value="false"/>
+            <param name="vas_cl_skip_station_mayattack" value="true"/>
             <param name="checkrelation" value="false"/>
             <param name="internalorder" value="true"/>
           </create_order>
@@ -213,9 +213,9 @@
             <param name="allowothertargets" value="false"/>
             <param name="pursuetargets" value="true"/>
             <param name="pursuedistance" value="800km"/>
-            <param name="vas_epai_issued_by_epai" value="true"/>
-            <param name="vas_epai_skip_ship_mayattack" value="false"/>
-            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="vas_cl_issued_by_cl" value="true"/>
+            <param name="vas_cl_skip_ship_mayattack" value="false"/>
+            <param name="vas_cl_skip_station_mayattack" value="true"/>
             <param name="checkrelation" value="false"/>
             <param name="internalorder" value="true"/>
           </create_order>
@@ -224,9 +224,9 @@
             <param name="allowothertargets" value="false"/>
             <param name="pursuetargets" value="true"/>
             <param name="pursuedistance" value="800km"/>
-            <param name="vas_epai_issued_by_epai" value="true"/>
-            <param name="vas_epai_skip_ship_mayattack" value="false"/>
-            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="vas_cl_issued_by_cl" value="true"/>
+            <param name="vas_cl_skip_ship_mayattack" value="false"/>
+            <param name="vas_cl_skip_station_mayattack" value="true"/>
             <param name="checkrelation" value="false"/>
             <param name="internalorder" value="true"/>
           </create_order>
@@ -328,9 +328,9 @@
             <param name="allowothertargets" value="false"/>
             <param name="pursuetargets" value="true"/>
             <param name="pursuedistance" value="800km"/>
-            <param name="vas_epai_issued_by_epai" value="true"/>
-            <param name="vas_epai_skip_ship_mayattack" value="false"/>
-            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="vas_cl_issued_by_cl" value="true"/>
+            <param name="vas_cl_skip_ship_mayattack" value="false"/>
+            <param name="vas_cl_skip_station_mayattack" value="true"/>
             <param name="checkrelation" value="false"/>
             <param name="internalorder" value="true"/>
           </create_order>
@@ -339,9 +339,9 @@
             <param name="allowothertargets" value="false"/>
             <param name="pursuetargets" value="true"/>
             <param name="pursuedistance" value="800km"/>
-            <param name="vas_epai_issued_by_epai" value="true"/>
-            <param name="vas_epai_skip_ship_mayattack" value="false"/>
-            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="vas_cl_issued_by_cl" value="true"/>
+            <param name="vas_cl_skip_ship_mayattack" value="false"/>
+            <param name="vas_cl_skip_station_mayattack" value="true"/>
             <param name="checkrelation" value="false"/>
             <param name="internalorder" value="true"/>
           </create_order>
@@ -350,9 +350,9 @@
             <param name="allowothertargets" value="false"/>
             <param name="pursuetargets" value="true"/>
             <param name="pursuedistance" value="800km"/>
-            <param name="vas_epai_issued_by_epai" value="true"/>
-            <param name="vas_epai_skip_ship_mayattack" value="false"/>
-            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="vas_cl_issued_by_cl" value="true"/>
+            <param name="vas_cl_skip_ship_mayattack" value="false"/>
+            <param name="vas_cl_skip_station_mayattack" value="true"/>
             <param name="checkrelation" value="false"/>
             <param name="internalorder" value="true"/>
           </create_order>
@@ -361,9 +361,9 @@
             <param name="allowothertargets" value="false"/>
             <param name="pursuetargets" value="true"/>
             <param name="pursuedistance" value="800km"/>
-            <param name="vas_epai_issued_by_epai" value="true"/>
-            <param name="vas_epai_skip_ship_mayattack" value="false"/>
-            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="vas_cl_issued_by_cl" value="true"/>
+            <param name="vas_cl_skip_ship_mayattack" value="false"/>
+            <param name="vas_cl_skip_station_mayattack" value="true"/>
             <param name="checkrelation" value="false"/>
             <param name="internalorder" value="true"/>
           </create_order>
@@ -393,9 +393,9 @@
             <param name="allowothertargets" value="false"/>
             <param name="pursuetargets" value="true"/>
             <param name="pursuedistance" value="800km"/>
-            <param name="vas_epai_issued_by_epai" value="true"/>
-            <param name="vas_epai_skip_ship_mayattack" value="false"/>
-            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="vas_cl_issued_by_cl" value="true"/>
+            <param name="vas_cl_skip_ship_mayattack" value="false"/>
+            <param name="vas_cl_skip_station_mayattack" value="true"/>
             <param name="checkrelation" value="false"/>
             <param name="internalorder" value="true"/>
           </create_order>
@@ -443,9 +443,9 @@
             <param name="allowothertargets" value="false"/>
             <param name="pursuetargets" value="true"/>
             <param name="pursuedistance" value="800km"/>
-            <param name="vas_epai_issued_by_epai" value="true"/>
-            <param name="vas_epai_skip_ship_mayattack" value="false"/>
-            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="vas_cl_issued_by_cl" value="true"/>
+            <param name="vas_cl_skip_ship_mayattack" value="false"/>
+            <param name="vas_cl_skip_station_mayattack" value="true"/>
             <param name="checkrelation" value="false"/>
             <param name="internalorder" value="true"/>
           </create_order>
@@ -454,9 +454,9 @@
             <param name="allowothertargets" value="false"/>
             <param name="pursuetargets" value="true"/>
             <param name="pursuedistance" value="800km"/>
-            <param name="vas_epai_issued_by_epai" value="true"/>
-            <param name="vas_epai_skip_ship_mayattack" value="false"/>
-            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="vas_cl_issued_by_cl" value="true"/>
+            <param name="vas_cl_skip_ship_mayattack" value="false"/>
+            <param name="vas_cl_skip_station_mayattack" value="true"/>
             <param name="checkrelation" value="false"/>
             <param name="internalorder" value="true"/>
           </create_order>
@@ -465,9 +465,9 @@
             <param name="allowothertargets" value="false"/>
             <param name="pursuetargets" value="true"/>
             <param name="pursuedistance" value="800km"/>
-            <param name="vas_epai_issued_by_epai" value="true"/>
-            <param name="vas_epai_skip_ship_mayattack" value="false"/>
-            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="vas_cl_issued_by_cl" value="true"/>
+            <param name="vas_cl_skip_ship_mayattack" value="false"/>
+            <param name="vas_cl_skip_station_mayattack" value="true"/>
             <param name="checkrelation" value="false"/>
             <param name="internalorder" value="true"/>
           </create_order>
@@ -476,9 +476,9 @@
             <param name="allowothertargets" value="false"/>
             <param name="pursuetargets" value="true"/>
             <param name="pursuedistance" value="800km"/>
-            <param name="vas_epai_issued_by_epai" value="true"/>
-            <param name="vas_epai_skip_ship_mayattack" value="false"/>
-            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="vas_cl_issued_by_cl" value="true"/>
+            <param name="vas_cl_skip_ship_mayattack" value="false"/>
+            <param name="vas_cl_skip_station_mayattack" value="true"/>
             <param name="checkrelation" value="false"/>
             <param name="internalorder" value="true"/>
           </create_order>
@@ -546,9 +546,9 @@
             <param name="allowothertargets" value="false"/>
             <param name="pursuetargets" value="true"/>
             <param name="pursuedistance" value="800km"/>
-            <param name="vas_epai_issued_by_epai" value="true"/>
-            <param name="vas_epai_skip_ship_mayattack" value="false"/>
-            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="vas_cl_issued_by_cl" value="true"/>
+            <param name="vas_cl_skip_ship_mayattack" value="false"/>
+            <param name="vas_cl_skip_station_mayattack" value="true"/>
             <param name="checkrelation" value="false"/>
             <param name="internalorder" value="true"/>
           </create_order>
@@ -557,9 +557,9 @@
             <param name="allowothertargets" value="false"/>
             <param name="pursuetargets" value="true"/>
             <param name="pursuedistance" value="800km"/>
-            <param name="vas_epai_issued_by_epai" value="true"/>
-            <param name="vas_epai_skip_ship_mayattack" value="false"/>
-            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="vas_cl_issued_by_cl" value="true"/>
+            <param name="vas_cl_skip_ship_mayattack" value="false"/>
+            <param name="vas_cl_skip_station_mayattack" value="true"/>
             <param name="checkrelation" value="false"/>
             <param name="internalorder" value="true"/>
           </create_order>
@@ -568,9 +568,9 @@
             <param name="allowothertargets" value="false"/>
             <param name="pursuetargets" value="true"/>
             <param name="pursuedistance" value="800km"/>
-            <param name="vas_epai_issued_by_epai" value="true"/>
-            <param name="vas_epai_skip_ship_mayattack" value="false"/>
-            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="vas_cl_issued_by_cl" value="true"/>
+            <param name="vas_cl_skip_ship_mayattack" value="false"/>
+            <param name="vas_cl_skip_station_mayattack" value="true"/>
             <param name="checkrelation" value="false"/>
             <param name="internalorder" value="true"/>
           </create_order>
@@ -579,9 +579,9 @@
             <param name="allowothertargets" value="false"/>
             <param name="pursuetargets" value="true"/>
             <param name="pursuedistance" value="800km"/>
-            <param name="vas_epai_issued_by_epai" value="true"/>
-            <param name="vas_epai_skip_ship_mayattack" value="false"/>
-            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="vas_cl_issued_by_cl" value="true"/>
+            <param name="vas_cl_skip_ship_mayattack" value="false"/>
+            <param name="vas_cl_skip_station_mayattack" value="true"/>
             <param name="checkrelation" value="false"/>
             <param name="internalorder" value="true"/>
           </create_order>
@@ -627,9 +627,9 @@
             <param name="allowothertargets" value="false"/>
             <param name="pursuetargets" value="true"/>
             <param name="pursuedistance" value="800km"/>
-            <param name="vas_epai_issued_by_epai" value="true"/>
-            <param name="vas_epai_skip_ship_mayattack" value="false"/>
-            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="vas_cl_issued_by_cl" value="true"/>
+            <param name="vas_cl_skip_ship_mayattack" value="false"/>
+            <param name="vas_cl_skip_station_mayattack" value="true"/>
             <param name="checkrelation" value="false"/>
             <param name="internalorder" value="true"/>
           </create_order>
@@ -638,9 +638,9 @@
             <param name="allowothertargets" value="false"/>
             <param name="pursuetargets" value="true"/>
             <param name="pursuedistance" value="800km"/>
-            <param name="vas_epai_issued_by_epai" value="true"/>
-            <param name="vas_epai_skip_ship_mayattack" value="false"/>
-            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="vas_cl_issued_by_cl" value="true"/>
+            <param name="vas_cl_skip_ship_mayattack" value="false"/>
+            <param name="vas_cl_skip_station_mayattack" value="true"/>
             <param name="checkrelation" value="false"/>
             <param name="internalorder" value="true"/>
           </create_order>
@@ -686,9 +686,9 @@
             <param name="allowothertargets" value="false"/>
             <param name="pursuetargets" value="true"/>
             <param name="pursuedistance" value="800km"/>
-            <param name="vas_epai_issued_by_epai" value="true"/>
-            <param name="vas_epai_skip_ship_mayattack" value="false"/>
-            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="vas_cl_issued_by_cl" value="true"/>
+            <param name="vas_cl_skip_ship_mayattack" value="false"/>
+            <param name="vas_cl_skip_station_mayattack" value="true"/>
             <param name="checkrelation" value="false"/>
             <param name="internalorder" value="true"/>
           </create_order>
@@ -697,9 +697,9 @@
             <param name="allowothertargets" value="false"/>
             <param name="pursuetargets" value="true"/>
             <param name="pursuedistance" value="800km"/>
-            <param name="vas_epai_issued_by_epai" value="true"/>
-            <param name="vas_epai_skip_ship_mayattack" value="false"/>
-            <param name="vas_epai_skip_station_mayattack" value="true"/>
+            <param name="vas_cl_issued_by_cl" value="true"/>
+            <param name="vas_cl_skip_ship_mayattack" value="false"/>
+            <param name="vas_cl_skip_station_mayattack" value="true"/>
             <param name="checkrelation" value="false"/>
             <param name="internalorder" value="true"/>
           </create_order>

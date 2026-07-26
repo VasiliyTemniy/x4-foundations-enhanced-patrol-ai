@@ -25,7 +25,7 @@ Critical save-import constraint found in normal saves: the start-label consumer 
 14. DONE! Update the garbage collector that that would clean global vas_epai_should_scan_at_patrol_start map removing entries for destroyed ships.
 15. DONE! Add something to adjust target score based on any enemy VFF or station is on the way to the target. If any enemy is on the way (calculation must be somewhat laxed, like e.g.: x.y.z: patrol 0.0.0 target 10.0.0 and some station 5.2.0 must still account that station as "on the way". The allowed deviation from line between patrol and target is a matter of discuss) then the score must be lowered. It's also a matter of discuss whether enemy power must be considered here. If enemy power is considered - then it's not "check the first enemy along the way", but "check the enemy power along the way", maybe with some threshold or max tracked power-along-the-way-divided-to-self-power ratio.
 16. DONE! Add some logic to move around hostile stations that cannot be overpowered. E.g. some big defence station is situated between a patrol and an attackable ship or station - if that big defence station cannot be overpowered, it must be moved around to make sure no useless attacks happen.
-17. Split this mod into three mods: lib helpers mod, vanilla patrol order mutation mod, "clear that sector" (name must be better! it's a draft for name) aiscript mod
+17. DONE! Split this mod into three mods: lib helpers mod, vanilla patrol order mutation mod, "clear that sector" (name must be better! it's a draft for name) aiscript mod
 
 
 ## Roadmap steps details

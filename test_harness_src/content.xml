@@ -9,6 +9,7 @@
   save="0"
   enabled="1">
   <dependency version="900"/>
-  <dependency id="vas_enhanced_patrol_ai" optional="true"/>
+  <dependency id="vas_combat_logic" optional="false"/>
+  <dependency id="vas_enhanced_patrol_ai" optional="false"/>
   <text language="44" name="[VAS] Enhanced Patrol AI - Test Harness" description="Technical test harness for Enhanced Patrol AI" author="VasiliyTemniy"/>
 </content>

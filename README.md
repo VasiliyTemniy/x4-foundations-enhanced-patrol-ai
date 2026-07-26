@@ -32,6 +32,9 @@ forward compatibility; treat each game update as "verify before trusting it."
 
 ## Dependencies
 
+- **[VAS] Combat Logic** - hard dependency. The sector scan engine, force math and
+  attack issuing all live there. It has no options of its own; install it and
+  forget it.
 - **SirNukes Mod Support APIs** ([link](https://www.nexusmods.com/x4foundations/mods/503)) - hard
   dependency. Provides the Simple Menu / Options helpers used by the options menu.
 
@@ -92,25 +95,19 @@ This mod injects into vanilla AI scripts in place - that is the whole point: it
 changes how patrols decide and fight where that logic already lives. The patched
 vanilla scripts are:
 
-- **`order.fight.attack.object`** - **the one to watch.** Carries the patrol's
-  fire-authorization flags into the actual attack, clamps pursuit to a travelled
-  distance budget, and rewrites the vanilla `mayattack` gate so deliberately
-  chosen civilian/economy targets are not thrown away. It holds the only
-  vanilla expression this mod *replaces* rather than adds to.
 - `order.fight.patrol` - entry point; reads the per-ship toggle and the faction
   gates, and runs a follow-up scan after an attack finishes.
 - `move.seekenemies` - turns the wake heartbeat into a throttled sector scan and
-  hands the chosen target off to the attack helper.
-- `move.generic` - keeps an approach leg from chasing a target out of the sector.
+  hands the chosen target off to Combat Logic.
 
-The decision engine itself is **not** a patch: it lives in this mod's own
-`lib.vas.epai.scan` and `lib.vas.epai.issue.attack` scripts, which are new files
-and cannot conflict with anything.
+That is all of it. The decision engine is **not** a patch - it lives in Combat
+Logic's own `lib.vas.cl.scan` and `lib.vas.cl.issue.attack` scripts, which are
+new files and cannot conflict with anything. Combat Logic does additionally
+patch `order.fight.attack.object` and `move.generic`; see its own README.
 
 Any other mod that edits the **same** vanilla scripts can potentially interfere
 with this mod's logic - not necessarily, but it is the most likely source of
-trouble, and **`order.fight.attack.object`** is the one to watch. If something
-behaves oddly, suspect an overlapping AI-script mod first.
+trouble. If something behaves oddly, suspect an overlapping AI-script mod first.
 
 ## Credits
 

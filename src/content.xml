@@ -7,5 +7,6 @@
   version="100"
   date="2026-06-21"
   save="0">
+  <dependency id="vas_combat_logic" optional="false" name="[VAS] Combat Logic"/>
   <dependency id="ws_2042901274" optional="false" name="SirNukes Mod Support APIs"/>
 </content>

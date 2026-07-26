@@ -38,7 +38,7 @@
           $stationInitiationThresholdPct = 15,
           $pendingPatrolForceCoeffPct = 50,
           $forceEstimationDeviationPct = 10,
-          $debugEnabled = false,
+          $debugEnabled = true,
         ]"/>
         <do_for_each name="$key" in="$defaults.keys.list">
           <do_if value="(@md.VAS_EnhancedPatrolAI_Config.ModConfig.{$key} + '') == 'null'">
@@ -57,19 +57,30 @@
       </conditions>
       <actions>
         <run_actions ref="SeedDefaults"/>
-        <!-- Shared hardcoded force-model baselines for AIScript helpers and station force. -->
-        <set_value name="global.$vas_epai_ship_force_baselines" exact="table[
-          $dps = 5000hp,
-          $durability = 250000hp,
-          $maxspeed_cruise = 120m,
-          $maxspeed_travel = 4000m,
-          $travel_chargetime = 8s,
-          $mobility_cruise_weight = 0.7,
-          $mobility_travel_weight = 0.3
-        ]"/>
         <run_actions ref="PushMirrors"/>
+        <run_actions ref="RegisterWithCombatLogic"/>
       </actions>
     </cue>
+
+    <!--@doc
+        Registers this consumer with Combat Logic: patrolling ships count as potential ally
+        combatants for every CL consumer, and the wake heartbeat runs at least this dense.
+        Note the registry REPLACES CL's ['Patrol'] fallback once any consumer registers, so
+        Patrol must be appended explicitly here. -->
+    <library name="RegisterWithCombatLogic" purpose="run_actions">
+      <actions>
+        <do_if value="not @global.$vas_cl_combat_order_ids">
+          <set_value name="global.$vas_cl_combat_order_ids" exact="[]"/>
+        </do_if>
+        <do_if value="not global.$vas_cl_combat_order_ids.indexof.{'Patrol'}">
+          <append_to_list name="global.$vas_cl_combat_order_ids" exact="'Patrol'"/>
+        </do_if>
+        <do_if value="not @global.$vas_cl_wake_intervals">
+          <set_value name="global.$vas_cl_wake_intervals" exact="table[]"/>
+        </do_if>
+        <set_value name="global.$vas_cl_wake_intervals.{'$vas_epai'}" exact="md.VAS_EnhancedPatrolAI_Config.ModConfig.$intervalSec * 1s"/>
+      </actions>
+    </library>
 
     <!--@doc
         Pushes every ModConfig value onto the player blackboard in the units the
@@ -524,6 +535,11 @@
         <do_if value="event.param.$echo == 'intervalSec'">
           <set_value name="md.VAS_EnhancedPatrolAI_Config.ModConfig.$intervalSec" exact="event.param.$value"/>
           <set_value name="player.entity.$vas_epai_interval" exact="event.param.$value * 1s"/>
+          <!-- Keep the Combat Logic wake heartbeat registration in step; the CL bucket refresh picks it up. -->
+          <do_if value="not @global.$vas_cl_wake_intervals">
+            <set_value name="global.$vas_cl_wake_intervals" exact="table[]"/>
+          </do_if>
+          <set_value name="global.$vas_cl_wake_intervals.{'$vas_epai'}" exact="event.param.$value * 1s"/>
         </do_if>
         <do_elseif value="event.param.$echo == 'maxPursueTravelDistanceKm'">
           <set_value name="md.VAS_EnhancedPatrolAI_Config.ModConfig.$maxPursueTravelDistanceKm" exact="event.param.$value"/>

@@ -69,7 +69,29 @@ CHANGES
       <set_value name="$vas_epai_debug_chance" exact="if (@player.entity.$vas_epai_debug_chance + '') == 'null' then 0 else player.entity.$vas_epai_debug_chance"/>
       <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] patrol start EPAI follow-up scan after previous attack ship=' + @this.ship.idcode + ' ' + @this.ship.knownname + ' order=' + @this.ship.order.id + ' currentSector=' + @this.ship.sector.knownname + ' currentZone=' + @this.ship.zone.knownname" append="true"/>
 
-      <run_script name="'lib.vas.epai.scan'" result="$vas_epai_potential_targets">
+      <!-- Faction gates decide who may run EPAI at all, so a patrol that is gated off can never join
+           a fight - it must not be counted as a potential ally either. See move.seekenemies for why
+           the Xenon/Kha'ak gates need no equivalent here. -->
+      <set_value name="$vas_epai_potential_ally_owners" exact="if @player.entity.$vas_epai_apply_to_npc_factions then null else [faction.player]"/>
+
+      <run_script name="'lib.vas.cl.scan'" result="$vas_epai_potential_target_groups">
+        <param name="scan_interval" value="if (@player.entity.$vas_epai_interval + '') == 'null' then 30s else player.entity.$vas_epai_interval"/>
+        <param name="max_attack_init_distance" value="player.entity.$vas_epai_max_attack_init_distance"/>
+        <param name="skip_ship_may_attack" value="@player.entity.$vas_epai_skip_ship_mayattack"/>
+        <param name="skip_station_may_attack" value="@player.entity.$vas_epai_skip_station_mayattack"/>
+        <param name="attack_ships" value="@player.entity.$vas_epai_attack_ships"/>
+        <param name="attack_stations" value="@player.entity.$vas_epai_attack_stations"/>
+        <param name="visibility_all_seeing" value="@player.entity.$vas_epai_all_seeing"/>
+        <param name="visibility_allied_vision" value="@player.entity.$vas_epai_allied_vision"/>
+        <param name="potential_ally_combatant_force_coefficient" value="player.entity.$vas_epai_pending_patrol_force_coefficient"/>
+        <param name="potential_ally_owners" value="$vas_epai_potential_ally_owners"/>
+        <param name="force_estimation_deviation" value="player.entity.$vas_epai_force_estimation_deviation"/>
+        <param name="ship_join_threshold" value="player.entity.$vas_epai_ship_join_threshold"/>
+        <param name="ship_overcommit_limit" value="player.entity.$vas_epai_ship_overcommit_limit"/>
+        <param name="station_join_threshold" value="player.entity.$vas_epai_station_join_threshold"/>
+        <param name="station_initiation_threshold" value="player.entity.$vas_epai_station_initiation_threshold"/>
+        <param name="debugchance" value="$vas_epai_debug_chance"/>
+        <param name="debugdirectory" value="'VAS_EnhancedPatrolAI'"/>
         <save_retval name="potential_target_scores" variable="$vas_epai_potential_target_scores"/>
         <save_retval name="blocking_stations" variable="$vas_epai_blocking_stations"/>
         <save_retval name="sector_enemy_stations" variable="$vas_epai_sector_enemy_stations"/>
@@ -77,26 +99,36 @@ CHANGES
 
       <!-- No targets found - resume from the start, but with
            global.$vas_epai_should_scan_at_patrol_start.{this.ship} unset -->
-      <do_if value="not @$vas_epai_potential_targets or $vas_epai_potential_targets.count == 0">
+      <do_if value="not @$vas_epai_potential_target_groups or $vas_epai_potential_target_groups.count == 0">
         <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] patrol start EPAI follow-up scan found no targets; resume=start'" append="true"/>
         <resume label="start"/>
       </do_if>
 
-      <set_value name="$vas_epai_selected_target" exact="$vas_epai_potential_targets.{1}"/>
-      <set_value name="$vas_epai_selected_target_subordinates_flatlist" exact="null"/>
-      <do_if value="not $vas_epai_selected_target.isclass.station">
-        <!-- vff branch cache must still be present at this point -
-             GC will sweep only 3 seconds after the expiry -->
-        <set_value name="$vas_epai_selected_target_subordinates_flatlist" exact="@global.$vas_epai_vffbranch_cache.{this.ship.owner}.{$vas_epai_selected_target}.$value"/>
-      </do_if>
+      <!-- Target groups are self-contained: primary target plus its ready-to-use secondary
+           targets list, so no CL cache internals are touched from this mod. -->
+      <set_value name="$vas_epai_selected_group" exact="$vas_epai_potential_target_groups.{1}"/>
+      <set_value name="$vas_epai_selected_target" exact="$vas_epai_selected_group.$primarytarget"/>
+      <set_value name="$vas_epai_selected_target_subordinates_flatlist" exact="@$vas_epai_selected_group.$secondarytargets"/>
 
       <debug_to_file chance="$vas_epai_debug_chance" name="this.ship.idcode" directory="'VAS_EnhancedPatrolAI'" text="'[' + player.age + '] issue attack from patrol start follow-up target=' + $vas_epai_selected_target.idcode + ' ' + $vas_epai_selected_target.knownname + ' class=' + $vas_epai_selected_target.class + ' secondaryTargets=' + @$vas_epai_selected_target_subordinates_flatlist.count" append="true"/>
 
-      <run_script name="'lib.vas.epai.issue.attack'">
-        <param name="primarytarget" value="$vas_epai_selected_target"/>
-        <param name="secondarytargets" value="$vas_epai_selected_target_subordinates_flatlist"/>
-        <param name="blockingstations" value="$vas_epai_blocking_stations"/>
-        <param name="sectorenemystations" value="$vas_epai_sector_enemy_stations"/>
+      <!-- Re-arm the follow-up marker: this attack can itself be followed by another rescan.
+           See move.seekenemies for why this lives in EPAI and not in Combat Logic. -->
+      <do_if value="not @global.$vas_epai_should_scan_at_patrol_start">
+        <set_value name="global.$vas_epai_should_scan_at_patrol_start" exact="table[]"/>
+      </do_if>
+      <set_value name="global.$vas_epai_should_scan_at_patrol_start.{this.ship}" exact="true"/>
+
+      <run_script name="'lib.vas.cl.issue.attack'">
+        <param name="primary_target" value="$vas_epai_selected_target"/>
+        <param name="secondary_targets" value="$vas_epai_selected_target_subordinates_flatlist"/>
+        <param name="blocking_stations" value="$vas_epai_blocking_stations"/>
+        <param name="sector_enemy_stations" value="$vas_epai_sector_enemy_stations"/>
+        <param name="pursue_distance" value="player.entity.$vas_epai_max_pursue_travel_distance"/>
+        <param name="skip_ship_mayattack" value="@player.entity.$vas_epai_skip_ship_mayattack"/>
+        <param name="skip_station_mayattack" value="@player.entity.$vas_epai_skip_station_mayattack"/>
+        <param name="approach_max_waypoints" value="player.entity.$vas_epai_approach_max_waypoints"/>
+        <param name="debugchance" value="$vas_epai_debug_chance"/>
       </run_script>
 
       <!-- The same handoff as vanilla does after calling move.seekenemies -->
