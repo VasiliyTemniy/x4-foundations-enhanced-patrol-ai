@@ -38,7 +38,7 @@
           $stationInitiationThresholdPct = 15,
           $pendingPatrolForceCoeffPct = 50,
           $forceEstimationDeviationPct = 10,
-          $debugEnabled = true,
+          $debugEnabled = false,
         ]"/>
         <do_for_each name="$key" in="$defaults.keys.list">
           <do_if value="(@md.VAS_EnhancedPatrolAI_Config.ModConfig.{$key} + '') == 'null'">
